@@ -1,0 +1,75 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Queue-it Integration Dashboard",
+    "tags": ["queueit", "integration"],
+    "timezone": "browser",
+    "schemaVersion": 30,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Queue Overlay Shown",
+        "targets": [{
+          "expr": "queue_overlay_shown_total",
+          "format": "time_series"
+        }],
+        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4}
+      },
+      {
+        "type": "stat",
+        "title": "Queue Join Events",
+        "targets": [{
+          "expr": "queue_join_total",
+          "format": "time_series"
+        }],
+        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4}
+      },
+      {
+        "type": "stat",
+        "title": "Queue Cancel Events",
+        "targets": [{
+          "expr": "queue_cancel_total",
+          "format": "time_series"
+        }],
+        "gridPos": {"x": 0, "y": 4, "w": 6, "h": 4}
+      },
+      {
+        "type": "stat",
+        "title": "Queue Errors",
+        "targets": [{
+          "expr": "queue_error_total",
+          "format": "time_series"
+        }],
+        "gridPos": {"x": 6, "y": 4, "w": 6, "h": 4}
+      },
+      {
+        "type": "stat",
+        "title": "Queue Status Checks",
+        "targets": [{
+          "expr": "queue_status_check_total",
+          "format": "time_series"
+        }],
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 4}
+      },
+      {
+        "type": "timeseries",
+        "title": "Integration Errors Over Time",
+        "targets": [{
+          "expr": "rate(queue_error_total[5m])",
+          "legendFormat": "Errors/min"
+        }],
+        "gridPos": {"x": 0, "y": 12, "w": 12, "h": 6}
+      },
+      {
+        "type": "timeseries",
+        "title": "Queue Joins by Event ID and Status",
+        "targets": [{
+          "expr": "sum by(eventId, status) (rate(queue_join_total[5m]))",
+          "legendFormat": "{{eventId}} - {{status}}"
+        }],
+        "gridPos": {"x": 0, "y": 18, "w": 12, "h": 8}
+      }
+    ]
+  }
+} 

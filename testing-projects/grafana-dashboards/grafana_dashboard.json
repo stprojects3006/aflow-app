@@ -1,0 +1,50 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "PetClinic HTTP Metrics",
+    "tags": ["petclinic", "http", "demo"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "type": "stat",
+        "title": "HTTP Requests (Total)",
+        "gridPos": {"x": 0, "y": 0, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(http_server_requests_seconds_count)",
+            "legendFormat": "Total"
+          }
+        ],
+        "datasource": "Prometheus"
+      },
+      {
+        "type": "stat",
+        "title": "HTTP Errors (5xx)",
+        "gridPos": {"x": 8, "y": 0, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(http_server_requests_seconds_count{status=~\"5..\"})",
+            "legendFormat": "5xx Errors"
+          }
+        ],
+        "datasource": "Prometheus"
+      },
+      {
+        "type": "graph",
+        "title": "HTTP Response Time (avg, seconds)",
+        "gridPos": {"x": 0, "y": 6, "w": 16, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_sum[1m])) / sum(rate(http_server_requests_seconds_count[1m]))",
+            "legendFormat": "Avg Response Time"
+          }
+        ],
+        "datasource": "Prometheus"
+      }
+    ]
+  },
+  "overwrite": true
+} 

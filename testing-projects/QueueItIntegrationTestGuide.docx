@@ -1,0 +1,239 @@
+Queue-it Integration Test Guide
+
+---
+
+# Overview
+This guide explains how to use each integration test route in your application, what metrics to monitor in Grafana, and how to interpret the results for each test case. Each section includes:
+- How to process the test case
+- Technical details (endpoint, parameters, headers, payload, authentication, prerequisites)
+- What metrics to monitor
+- How to interpret results
+- Dashboard/panel guidance
+
+---
+
+## TC-01: Validate Queue Token
+- **Route:** POST /integration/queueit/validate
+- **How to process:**
+  - In the UI, obtain a valid queue token (e.g., from a previous Queue-it flow or test setup).
+  - Enter the token in the UI field and submit the test.
+- **Technical details:**
+  - **Endpoint:** `${queueit.api.base-url}/validate`
+  - **Parameters:**
+    - `token` (string, required): The queue token to validate.
+  - **Headers:**
+    - `api-key`: `${queueit.api.api-key}`
+    - `customer-id`: `${queueit.api.customer-id}`
+    - `secret-key`: `${queueit.api.secret-key}`
+    - `Content-Type`: `application/json`
+  - **Payload Example:**
+    ```json
+    { "token": "<token>" }
+    ```
+  - **Authentication:**
+    - All authentication is handled via headers (`api-key`, `customer-id`, `secret-key`).
+  - **Prerequisites:**
+    - You must have a valid queue token. This may require running a prior flow in the UI or using a test token.
+- **Metrics to monitor:**
+  - `queueit_validate_total`, `queueit_api_requests_total`, `queueit_api_response_time_seconds`, `queueit_api_errors_total`
+- **How to interpret:**
+  - Success returns queue status or redirect info. Errors increment error metrics.
+- **Dashboard guidance:**
+  - Panels: API Response Time, Error Rate, Queue Overlay Shown
+  - Steps: Run the test, observe UI, check panels for spikes.
+
+---
+
+## TC-02: Simulate Queue User
+- **Route:** POST /integration/queueit/queue
+- **How to process:**
+  - In the UI, enter a test user ID and submit the test.
+- **Technical details:**
+  - **Endpoint:** `${queueit.api.base-url}/queue`
+  - **Parameters:**
+    - `userId` (string, required): The user ID to simulate in the queue.
+  - **Headers:** (same as above)
+  - **Payload Example:**
+    ```json
+    { "userId": "<userId>" }
+    ```
+  - **Authentication:**
+    - All authentication is handled via headers.
+  - **Prerequisites:**
+    - No special prerequisites; any test user ID can be used.
+- **Metrics to monitor:**
+  - `queueit_queue_total`, `queueit_api_requests_total`, `queueit_api_response_time_seconds`
+- **How to interpret:**
+  - Success increments join metrics. Errors indicate issues.
+- **Dashboard guidance:**
+  - Panels: Queue Join Events, API Throughput
+
+---
+
+## TC-03: Cancel Queue Session
+- **Route:** POST /integration/queueit/cancel
+- **How to process:**
+  - In the UI, enter a valid session ID and submit the test.
+- **Technical details:**
+  - **Endpoint:** `${queueit.api.base-url}/cancel`
+  - **Parameters:**
+    - `sessionId` (string, required): The session ID to cancel.
+  - **Headers:** (same as above)
+  - **Payload Example:**
+    ```json
+    { "sessionId": "<sessionId>" }
+    ```
+  - **Authentication:**
+    - All authentication is handled via headers.
+  - **Prerequisites:**
+    - You must have a valid session ID, which may require running a prior queue simulation.
+- **Metrics to monitor:**
+  - `queueit_cancel_total`, `queueit_api_requests_total`, `queueit_api_errors_total`
+- **How to interpret:**
+  - Success increments cancel metrics. Errors should be rare.
+- **Dashboard guidance:**
+  - Panels: Queue Cancel Events, Error Rate
+
+---
+
+## TC-04: Extend Queue Cookie
+- **Route:** POST /integration/queueit/extend-cookie
+- **How to process:**
+  - In the UI, enter a valid session ID and submit the test.
+- **Technical details:**
+  - **Endpoint:** `${queueit.api.base-url}/extend-cookie`
+  - **Parameters:**
+    - `sessionId` (string, required): The session ID whose cookie should be extended.
+  - **Headers:** (same as above)
+  - **Payload Example:**
+    ```json
+    { "sessionId": "<sessionId>" }
+    ```
+  - **Authentication:**
+    - All authentication is handled via headers.
+  - **Prerequisites:**
+    - You must have a valid session ID.
+- **Metrics to monitor:**
+  - `queueit_extend_cookie_total`, `queueit_api_requests_total`
+- **How to interpret:**
+  - Success increments the metric. Errors may indicate session or API issues.
+- **Dashboard guidance:**
+  - Panels: API Throughput, Average Response Time
+
+---
+
+## TC-05: Get Queue/Event Status
+- **Route:** GET /integration/queueit/status
+- **How to process:**
+  - In the UI, click to run the status check.
+- **Technical details:**
+  - **Endpoint:** `${queueit.api.base-url}/status`
+  - **Parameters:** None
+  - **Headers:** (same as above)
+  - **Payload Example:** None (GET request)
+  - **Authentication:**
+    - All authentication is handled via headers.
+  - **Prerequisites:**
+    - No prerequisites.
+- **Metrics to monitor:**
+  - `queueit_status_total`, `queueit_api_requests_total`
+- **How to interpret:**
+  - Each call increments status check metrics. Errors may indicate API issues.
+- **Dashboard guidance:**
+  - Panels: Queue Status Checks, API Response Time
+
+---
+
+## TC-06: Health Check
+- **Route:** GET /integration/queueit/health
+- **How to process:**
+  - In the UI, click to run the health check.
+- **Technical details:**
+  - **Endpoint:** `${queueit.api.base-url}/health`
+  - **Parameters:** None
+  - **Headers:** (same as above)
+  - **Payload Example:** None (GET request)
+  - **Authentication:**
+    - All authentication is handled via headers.
+  - **Prerequisites:**
+    - No prerequisites.
+- **Metrics to monitor:**
+  - `queueit_health_total`, `queueit_api_requests_total`
+- **How to interpret:**
+  - Should always return healthy unless there is a platform issue.
+- **Dashboard guidance:**
+  - Panels: API Throughput, Success Rate
+
+---
+
+## TC-07: Simulate Event (Stub)
+- **Route:** POST /integration/queueit/simulate-event
+- **How to process:**
+  - In the UI, click to run the stub test.
+- **Technical details:**
+  - **Endpoint:** Not implemented (returns 501)
+  - **Parameters:** None
+  - **Headers:** None
+  - **Payload Example:** None
+  - **Authentication:** None
+  - **Prerequisites:** None
+- **Metrics to monitor:**
+  - `queueit_simulate_event_total`
+- **How to interpret:**
+  - Used for future expansion or UI testing.
+- **Dashboard guidance:**
+  - Panels: API Throughput
+
+---
+
+## TC-08: Inspect Session Info (Stub)
+- **Route:** GET /integration/queueit/session-info
+- **How to process:**
+  - In the UI, click to run the stub test.
+- **Technical details:**
+  - **Endpoint:** Not implemented (returns 501)
+  - **Parameters:** None
+  - **Headers:** None
+  - **Payload Example:** None
+  - **Authentication:** None
+  - **Prerequisites:** None
+- **Metrics to monitor:**
+  - `queueit_session_info_total`
+- **How to interpret:**
+  - Used for future expansion or UI testing.
+- **Dashboard guidance:**
+  - Panels: API Throughput
+
+---
+
+## TC-09: Reset Test State (Stub)
+- **Route:** POST /integration/queueit/reset-test-state
+- **How to process:**
+  - In the UI, click to run the stub test.
+- **Technical details:**
+  - **Endpoint:** Not implemented (returns 501)
+  - **Parameters:** None
+  - **Headers:** None
+  - **Payload Example:** None
+  - **Authentication:** None
+  - **Prerequisites:** None
+- **Metrics to monitor:**
+  - `queueit_reset_test_state_total`
+- **How to interpret:**
+  - Used for future expansion or UI testing.
+- **Dashboard guidance:**
+  - Panels: API Throughput
+
+---
+
+# Discovering More Insights
+- Use the "Comprehensive Application Metrics" dashboard for a holistic view.
+- Drill down into panels like "API Response Time" and "Error Rate" to identify bottlenecks.
+- Use time range selectors to correlate test runs with metric spikes.
+- Hover over graph points for detailed tooltips and breakdowns.
+
+# Implementation Notes
+- All API calls use `RestTemplate` with headers: `api-key`, `customer-id`, `secret-key`, and `Content-Type: application/json`.
+- Configuration is managed via `QueueItSettings` and `application.properties`.
+- Each test case increments a custom Micrometer counter for Prometheus/Grafana.
+- Error handling and logging are recommended for troubleshooting. 

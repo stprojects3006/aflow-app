@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Queue-it Integration Test Guide</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f9fa;
+      color: #222;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2d7dd2;
+      color: #fff;
+      padding: 2rem 1rem 1rem 1rem;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    nav {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 0.5rem 1rem;
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    nav a {
+      color: #2d7dd2;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav a:hover {
+      color: #125699;
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      padding: 2rem 2.5rem;
+    }
+    h1, h2, h3 {
+      color: #2d7dd2;
+      margin-top: 1.5rem;
+    }
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 0.3rem;
+      margin-bottom: 1rem;
+    }
+    section {
+      margin-bottom: 2.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      background: #f9fbfc;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid #e0e0e0;
+      text-align: left;
+    }
+    th {
+      background: #eaf3fa;
+      color: #2d7dd2;
+      font-weight: 600;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    code, pre {
+      background: #f4f6f8;
+      color: #1a3a5d;
+      border-radius: 4px;
+      padding: 0.2em 0.4em;
+      font-size: 1em;
+    }
+    pre {
+      display: block;
+      padding: 1em;
+      margin: 1em 0;
+      overflow-x: auto;
+    }
+    .metrics, .dashboard {
+      background: #f4f6f8;
+      border-left: 4px solid #2d7dd2;
+      padding: 1em 1.5em;
+      margin: 1em 0;
+      border-radius: 6px;
+    }
+    .section-link {
+      float: right;
+      font-size: 0.9em;
+      color: #888;
+      text-decoration: none;
+    }
+    @media (max-width: 600px) {
+      main { padding: 1rem; }
+      nav { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Queue-it Integration Test Guide</h1>
+    <p>Comprehensive guide for integration testing, monitoring, and dashboarding of Queue-it APIs in Spring PetClinic.</p>
+  </header>
+  <nav>
+    <a href="#overview">Overview</a>
+    <a href="#tc01">TC-01</a>
+    <a href="#tc02">TC-02</a>
+    <a href="#tc03">TC-03</a>
+    <a href="#tc04">TC-04</a>
+    <a href="#tc05">TC-05</a>
+    <a href="#tc06">TC-06</a>
+    <a href="#tc07">TC-07</a>
+    <a href="#tc08">TC-08</a>
+    <a href="#tc09">TC-09</a>
+    <a href="#insights">Insights</a>
+    <a href="#notes">Implementation Notes</a>
+  </nav>
+  <main>
+    <section id="overview">
+      <h2>Overview</h2>
+      <ul>
+        <li>How to process the test case</li>
+        <li>Technical details (endpoint, parameters, headers, payload, authentication, prerequisites)</li>
+        <li>What metrics to monitor</li>
+        <li>How to interpret results</li>
+        <li>Dashboard/panel guidance</li>
+      </ul>
+    </section>
+
+    <section id="tc01">
+      <h2>TC-01: Validate Queue Token <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>POST /integration/queueit/validate</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, obtain a valid queue token (e.g., from a previous Queue-it flow or test setup). Enter the token in the UI field and submit the test.</td></tr>
+        <tr><th>Endpoint</th><td><code>${queueit.api.base-url}/validate</code></td></tr>
+        <tr><th>Parameters</th><td><code>token</code> (string, required): The queue token to validate.</td></tr>
+        <tr><th>Headers</th><td><code>api-key</code>, <code>customer-id</code>, <code>secret-key</code>, <code>Content-Type: application/json</code></td></tr>
+        <tr><th>Payload Example</th><td><pre>{
+  "token": "&lt;token&gt;"
+}</pre></td></tr>
+        <tr><th>Authentication</th><td>All authentication is handled via headers (<code>api-key</code>, <code>customer-id</code>, <code>secret-key</code>).</td></tr>
+        <tr><th>Prerequisites</th><td>You must have a valid queue token. This may require running a prior flow in the UI or using a test token.</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_validate_total</code>, <code>queueit_api_requests_total</code>, <code>queueit_api_response_time_seconds</code>, <code>queueit_api_errors_total</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: API Response Time, Error Rate, Queue Overlay Shown<br>
+        Steps: Run the test, observe UI, check panels for spikes.
+      </div>
+    </section>
+
+    <section id="tc02">
+      <h2>TC-02: Simulate Queue User <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>POST /integration/queueit/queue</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, enter a test user ID and submit the test.</td></tr>
+        <tr><th>Endpoint</th><td><code>${queueit.api.base-url}/queue</code></td></tr>
+        <tr><th>Parameters</th><td><code>userId</code> (string, required): The user ID to simulate in the queue.</td></tr>
+        <tr><th>Headers</th><td>(same as above)</td></tr>
+        <tr><th>Payload Example</th><td><pre>{
+  "userId": "&lt;userId&gt;"
+}</pre></td></tr>
+        <tr><th>Authentication</th><td>All authentication is handled via headers.</td></tr>
+        <tr><th>Prerequisites</th><td>No special prerequisites; any test user ID can be used.</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_queue_total</code>, <code>queueit_api_requests_total</code>, <code>queueit_api_response_time_seconds</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: Queue Join Events, API Throughput
+      </div>
+    </section>
+
+    <section id="tc03">
+      <h2>TC-03: Cancel Queue Session <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>POST /integration/queueit/cancel</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, enter a valid session ID and submit the test.</td></tr>
+        <tr><th>Endpoint</th><td><code>${queueit.api.base-url}/cancel</code></td></tr>
+        <tr><th>Parameters</th><td><code>sessionId</code> (string, required): The session ID to cancel.</td></tr>
+        <tr><th>Headers</th><td>(same as above)</td></tr>
+        <tr><th>Payload Example</th><td><pre>{
+  "sessionId": "&lt;sessionId&gt;"
+}</pre></td></tr>
+        <tr><th>Authentication</th><td>All authentication is handled via headers.</td></tr>
+        <tr><th>Prerequisites</th><td>You must have a valid session ID, which may require running a prior queue simulation.</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_cancel_total</code>, <code>queueit_api_requests_total</code>, <code>queueit_api_errors_total</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: Queue Cancel Events, Error Rate
+      </div>
+    </section>
+
+    <section id="tc04">
+      <h2>TC-04: Extend Queue Cookie <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>POST /integration/queueit/extend-cookie</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, enter a valid session ID and submit the test.</td></tr>
+        <tr><th>Endpoint</th><td><code>${queueit.api.base-url}/extend-cookie</code></td></tr>
+        <tr><th>Parameters</th><td><code>sessionId</code> (string, required): The session ID whose cookie should be extended.</td></tr>
+        <tr><th>Headers</th><td>(same as above)</td></tr>
+        <tr><th>Payload Example</th><td><pre>{
+  "sessionId": "&lt;sessionId&gt;"
+}</pre></td></tr>
+        <tr><th>Authentication</th><td>All authentication is handled via headers.</td></tr>
+        <tr><th>Prerequisites</th><td>You must have a valid session ID.</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_extend_cookie_total</code>, <code>queueit_api_requests_total</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: API Throughput, Average Response Time
+      </div>
+    </section>
+
+    <section id="tc05">
+      <h2>TC-05: Get Queue/Event Status <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>GET /integration/queueit/status</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, click to run the status check.</td></tr>
+        <tr><th>Endpoint</th><td><code>${queueit.api.base-url}/status</code></td></tr>
+        <tr><th>Parameters</th><td>None</td></tr>
+        <tr><th>Headers</th><td>(same as above)</td></tr>
+        <tr><th>Payload Example</th><td>None (GET request)</td></tr>
+        <tr><th>Authentication</th><td>All authentication is handled via headers.</td></tr>
+        <tr><th>Prerequisites</th><td>No prerequisites.</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_status_total</code>, <code>queueit_api_requests_total</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: Queue Status Checks, API Response Time
+      </div>
+    </section>
+
+    <section id="tc06">
+      <h2>TC-06: Health Check <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>GET /integration/queueit/health</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, click to run the health check.</td></tr>
+        <tr><th>Endpoint</th><td><code>${queueit.api.base-url}/health</code></td></tr>
+        <tr><th>Parameters</th><td>None</td></tr>
+        <tr><th>Headers</th><td>(same as above)</td></tr>
+        <tr><th>Payload Example</th><td>None (GET request)</td></tr>
+        <tr><th>Authentication</th><td>All authentication is handled via headers.</td></tr>
+        <tr><th>Prerequisites</th><td>No prerequisites.</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_health_total</code>, <code>queueit_api_requests_total</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: API Throughput, Success Rate
+      </div>
+    </section>
+
+    <section id="tc07">
+      <h2>TC-07: Simulate Event (Stub) <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>POST /integration/queueit/simulate-event</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, click to run the stub test.</td></tr>
+        <tr><th>Endpoint</th><td>Not implemented (returns 501)</td></tr>
+        <tr><th>Parameters</th><td>None</td></tr>
+        <tr><th>Headers</th><td>None</td></tr>
+        <tr><th>Payload Example</th><td>None</td></tr>
+        <tr><th>Authentication</th><td>None</td></tr>
+        <tr><th>Prerequisites</th><td>None</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_simulate_event_total</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: API Throughput
+      </div>
+    </section>
+
+    <section id="tc08">
+      <h2>TC-08: Inspect Session Info (Stub) <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>GET /integration/queueit/session-info</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, click to run the stub test.</td></tr>
+        <tr><th>Endpoint</th><td>Not implemented (returns 501)</td></tr>
+        <tr><th>Parameters</th><td>None</td></tr>
+        <tr><th>Headers</th><td>None</td></tr>
+        <tr><th>Payload Example</th><td>None</td></tr>
+        <tr><th>Authentication</th><td>None</td></tr>
+        <tr><th>Prerequisites</th><td>None</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_session_info_total</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: API Throughput
+      </div>
+    </section>
+
+    <section id="tc09">
+      <h2>TC-09: Reset Test State (Stub) <a class="section-link" href="#top">↑</a></h2>
+      <table>
+        <tr><th>Route</th><td><code>POST /integration/queueit/reset-test-state</code></td></tr>
+        <tr><th>How to process</th><td>In the UI, click to run the stub test.</td></tr>
+        <tr><th>Endpoint</th><td>Not implemented (returns 501)</td></tr>
+        <tr><th>Parameters</th><td>None</td></tr>
+        <tr><th>Headers</th><td>None</td></tr>
+        <tr><th>Payload Example</th><td>None</td></tr>
+        <tr><th>Authentication</th><td>None</td></tr>
+        <tr><th>Prerequisites</th><td>None</td></tr>
+      </table>
+      <div class="metrics">
+        <strong>Metrics to monitor:</strong> <code>queueit_reset_test_state_total</code>
+      </div>
+      <div class="dashboard">
+        <strong>Dashboard guidance:</strong> Panels: API Throughput
+      </div>
+    </section>
+
+    <section id="insights">
+      <h2>Discovering More Insights <a class="section-link" href="#top">↑</a></h2>
+      <ul>
+        <li>Use the <strong>Comprehensive Application Metrics</strong> dashboard for a holistic view.</li>
+        <li>Drill down into panels like <strong>API Response Time</strong> and <strong>Error Rate</strong> to identify bottlenecks.</li>
+        <li>Use time range selectors to correlate test runs with metric spikes.</li>
+        <li>Hover over graph points for detailed tooltips and breakdowns.</li>
+      </ul>
+    </section>
+
+    <section id="notes">
+      <h2>Implementation Notes <a class="section-link" href="#top">↑</a></h2>
+      <ul>
+        <li>All API calls use <code>RestTemplate</code> with headers: <code>api-key</code>, <code>customer-id</code>, <code>secret-key</code>, and <code>Content-Type: application/json</code>.</li>
+        <li>Configuration is managed via <code>QueueItSettings</code> and <code>application.properties</code>.</li>
+        <li>Each test case increments a custom Micrometer counter for Prometheus/Grafana.</li>
+        <li>Error handling and logging are recommended for troubleshooting.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html> 

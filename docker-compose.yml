@@ -1,0 +1,53 @@
+services:
+  mysql:
+    image: mysql:9.2
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+      - MYSQL_USER=petclinic
+      - MYSQL_PASSWORD=petclinic
+      - MYSQL_DATABASE=petclinic
+    volumes:
+      - "./conf.d:/etc/mysql/conf.d:ro"
+    networks:
+      - petclinic-net
+  postgres:
+    image: postgres:17.5
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=petclinic
+      - POSTGRES_USER=petclinic
+      - POSTGRES_DB=petclinic
+    networks:
+      - petclinic-net
+  petclinic:
+    build: .
+    image: petclinic-app:latest
+    depends_on:
+      - mysql
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - petclinic-net
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - petclinic-net
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    networks:
+      - petclinic-net
+
+networks:
+  petclinic-net:
+    driver: bridge

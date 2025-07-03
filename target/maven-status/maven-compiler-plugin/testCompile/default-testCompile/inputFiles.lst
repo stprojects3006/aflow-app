@@ -1,0 +1,17 @@
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/MySqlIntegrationTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/model/ValidatorTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/owner/PetTypeFormatterTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/owner/VisitControllerTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/service/EntityUtils.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/system/CrashControllerTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/system/I18nPropertiesSyncTest.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/vet/VetControllerTests.java
+/Users/stmum0107/Documents/projectQ/spring-petclinic-main/src/test/java/org/springframework/samples/petclinic/vet/VetTests.java

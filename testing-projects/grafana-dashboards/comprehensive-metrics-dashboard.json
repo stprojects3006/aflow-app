@@ -1,0 +1,196 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Comprehensive Application Metrics",
+    "tags": ["comprehensive", "application", "metrics"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "HTTP Request Rate by Service",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count[5m])",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "yAxes": [
+          {
+            "label": "Requests per second"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "HTTP Response Codes",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count[5m])) by (status)",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Service Health Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "HTTP Request Latency (95th percentile)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m]))",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 12
+        },
+        "yAxes": [
+          {
+            "label": "Latency (seconds)"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "JVM Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "jvm_memory_used_bytes",
+            "legendFormat": "{{instance}} - {{area}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 12
+        },
+        "yAxes": [
+          {
+            "label": "Memory (bytes)"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "JVM Thread Count",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "jvm_threads_live_threads",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        }
+      },
+      {
+        "id": 7,
+        "title": "JVM Garbage Collection",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(jvm_gc_collection_seconds_sum[5m])",
+            "legendFormat": "{{instance}} - {{gc}}"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        }
+      },
+      {
+        "id": 8,
+        "title": "Total HTTP Requests",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(http_server_requests_seconds_count) by (instance)",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 0,
+          "y": 26
+        }
+      },
+      {
+        "id": 9,
+        "title": "Error Rate (4xx + 5xx)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..|5..\"}[5m])) by (instance)",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 26
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  },
+  "folderId": 0,
+  "overwrite": false
+} 
