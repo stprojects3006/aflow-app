@@ -1,75 +1,884 @@
 {
   "dashboard": {
     "id": null,
-    "title": "Queue-it Integration Dashboard",
-    "tags": ["queueit", "integration"],
+    "uid": null,
+    "title": "QueueIt Integration Dashboard",
+    "tags": ["queueit", "integration", "petclinic"],
+    "style": "dark",
     "timezone": "browser",
-    "schemaVersion": 30,
-    "version": 1,
     "panels": [
       {
-        "type": "stat",
-        "title": "Queue Overlay Shown",
-        "targets": [{
-          "expr": "queue_overlay_shown_total",
-          "format": "time_series"
-        }],
-        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4}
-      },
-      {
-        "type": "stat",
-        "title": "Queue Join Events",
-        "targets": [{
-          "expr": "queue_join_total",
-          "format": "time_series"
-        }],
-        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4}
-      },
-      {
-        "type": "stat",
-        "title": "Queue Cancel Events",
-        "targets": [{
-          "expr": "queue_cancel_total",
-          "format": "time_series"
-        }],
-        "gridPos": {"x": 0, "y": 4, "w": 6, "h": 4}
-      },
-      {
-        "type": "stat",
-        "title": "Queue Errors",
-        "targets": [{
-          "expr": "queue_error_total",
-          "format": "time_series"
-        }],
-        "gridPos": {"x": 6, "y": 4, "w": 6, "h": 4}
-      },
-      {
-        "type": "stat",
-        "title": "Queue Status Checks",
-        "targets": [{
-          "expr": "queue_status_check_total",
-          "format": "time_series"
-        }],
-        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 4}
-      },
-      {
+        "id": 1,
+        "title": "QueueIt Endpoint Requests (All)",
         "type": "timeseries",
-        "title": "Integration Errors Over Time",
-        "targets": [{
-          "expr": "rate(queue_error_total[5m])",
-          "legendFormat": "Errors/min"
-        }],
-        "gridPos": {"x": 0, "y": 12, "w": 12, "h": 6}
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])",
+            "legendFormat": "{{uri}} - {{method}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
       },
       {
+        "id": 2,
+        "title": "QueueIt Error Rate by Status Code",
         "type": "timeseries",
-        "title": "Queue Joins by Event ID and Status",
-        "targets": [{
-          "expr": "sum by(eventId, status) (rate(queue_join_total[5m]))",
-          "legendFormat": "{{eventId}} - {{status}}"
-        }],
-        "gridPos": {"x": 0, "y": 18, "w": 12, "h": 8}
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"400\"}[5m])",
+            "legendFormat": "400 Bad Request"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"401\"}[5m])",
+            "legendFormat": "401 Unauthorized"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"403\"}[5m])",
+            "legendFormat": "403 Forbidden"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"404\"}[5m])",
+            "legendFormat": "404 Not Found"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"}[5m])",
+            "legendFormat": "500 Internal Server Error"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"502\"}[5m])",
+            "legendFormat": "502 Bad Gateway"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"503\"}[5m])",
+            "legendFormat": "503 Service Unavailable"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 0.1
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "QueueIt Error Percentage by Status Code",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"400\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "400 Bad Request %"
+          },
+          {
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"401\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "401 Unauthorized %"
+          },
+          {
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"403\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "403 Forbidden %"
+          },
+          {
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"404\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "404 Not Found %"
+          },
+          {
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "500 Internal Server Error %"
+          },
+          {
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"502\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "502 Bad Gateway %"
+          },
+          {
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"503\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "503 Service Unavailable %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 10
+                },
+                {
+                  "color": "red",
+                  "value": 50
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "QueueIt Response Time by Error Status",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_sum{uri=~\"/integration/queueit/.*\",status=~\"4..|5..\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=~\"4..|5..\"}[5m])",
+            "legendFormat": "All 4xx/5xx Errors"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_sum{uri=~\"/integration/queueit/.*\",status=\"500\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"}[5m])",
+            "legendFormat": "500 Errors Only"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_sum{uri=~\"/integration/queueit/.*\",status=\"404\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"404\"}[5m])",
+            "legendFormat": "404 Errors Only"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "Total Errors by Status Code",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=~\"4..|5..\"})",
+            "legendFormat": "Total 4xx/5xx Errors"
+          },
+          {
+            "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"})",
+            "legendFormat": "Total 500 Errors"
+          },
+          {
+            "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"404\"})",
+            "legendFormat": "Total 404 Errors"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 10
+                },
+                {
+                  "color": "red",
+                  "value": 50
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Error Rate by Endpoint and Status",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/health\",status=~\"4..|5..\"}[5m])",
+            "legendFormat": "/health - All Errors"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/status\",status=~\"4..|5..\"}[5m])",
+            "legendFormat": "/status - All Errors"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/queue\",status=~\"4..|5..\"}[5m])",
+            "legendFormat": "/queue - All Errors"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/cancel\",status=~\"4..|5..\"}[5m])",
+            "legendFormat": "/cancel - All Errors"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/extend-cookie\",status=~\"4..|5..\"}[5m])",
+            "legendFormat": "/extend-cookie - All Errors"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 0.1
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 16,
+          "x": 8,
+          "y": 16
+        }
+      },
+      {
+        "id": 7,
+        "title": "Success Rate (Non-Error Responses)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "(1 - (sum(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=~\"4..|5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])))) * 100",
+            "legendFormat": "Success Rate (2xx/3xx)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 50
+                },
+                {
+                  "color": "green",
+                  "value": 90
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "Exception Types by Error Status",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",exception=\"NotFound\",status=~\"4..|5..\"}[5m])",
+            "legendFormat": "NotFound Exceptions"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",exception!=\"NotFound\",status=~\"4..|5..\"}[5m])",
+            "legendFormat": "Other Exceptions"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "normal"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 0.1
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 16,
+          "x": 8,
+          "y": 24
+        }
+      },
+      {
+        "id": 9,
+        "title": "Top Source IP Addresses",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])))",
+            "legendFormat": "{{client_ip}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 0.1
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        }
+      },
+      {
+        "id": 10,
+        "title": "IP Address Distribution by Region",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"192\\.168\\..*\"}[5m]))",
+            "legendFormat": "North America (192.168.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"10\\..*\"}[5m]))",
+            "legendFormat": "Private Network (10.x.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"172\\.16\\..*\"}[5m]))",
+            "legendFormat": "Private Network (172.16.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"193\\..*\"}[5m]))",
+            "legendFormat": "Europe (193.x.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"194\\..*\"}[5m]))",
+            "legendFormat": "Europe (194.x.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"202\\..*\"}[5m]))",
+            "legendFormat": "Asia (202.x.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"203\\..*\"}[5m]))",
+            "legendFormat": "Asia (203.x.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"100\\.64\\..*\"}[5m]))",
+            "legendFormat": "Mobile Networks (100.64.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",client_ip=~\"100\\.65\\..*\"}[5m]))",
+            "legendFormat": "Mobile Networks (100.65.x.x)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "normal"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        }
+      },
+      {
+        "id": 11,
+        "title": "Unique IP Addresses Count",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "count(count by (client_ip) (http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}))",
+            "legendFormat": "Unique IP Addresses"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 50
+                },
+                {
+                  "color": "red",
+                  "value": 100
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 40
+        }
+      },
+      {
+        "id": 12,
+        "title": "IP Address Error Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=~\"4..|5..\",client_ip=~\"192\\.168\\..*\"}[5m]))",
+            "legendFormat": "North America Errors (192.168.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=~\"4..|5..\",client_ip=~\"10\\..*\"}[5m]))",
+            "legendFormat": "Private Network Errors (10.x.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=~\"4..|5..\",client_ip=~\"202\\..*\"}[5m]))",
+            "legendFormat": "Asia Errors (202.x.x.x)"
+          },
+          {
+            "expr": "sum by (client_ip) (rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=~\"4..|5..\",client_ip=~\"193\\..*\"}[5m]))",
+            "legendFormat": "Europe Errors (193.x.x.x)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 0.1
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 16,
+          "x": 8,
+          "y": 40
+        }
       }
-    ]
-  }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "templating": {
+      "list": []
+    },
+    "annotations": {
+      "list": []
+    },
+    "refresh": "5s",
+    "schemaVersion": 38,
+    "version": 1,
+    "links": [],
+    "gnetId": null
+  },
+  "folderId": null,
+  "folderTitle": "",
+  "message": "",
+  "overwrite": true
 } 

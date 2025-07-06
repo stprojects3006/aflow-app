@@ -1,0 +1,62 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "PetClinic HTTP & Queue Traffic",
+    "tags": ["petclinic", "http", "queueit", "traffic"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Total HTTP Requests (All Endpoints)",
+        "gridPos": {"x": 0, "y": 0, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(http_server_requests_seconds_count)",
+            "legendFormat": "Total HTTP Requests"
+          }
+        ],
+        "datasource": "Prometheus"
+      },
+      {
+        "type": "stat",
+        "title": "Total Requests to /integration/queueit/queue",
+        "gridPos": {"x": 8, "y": 0, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(http_server_requests_seconds_count{uri=\"/integration/queueit/queue\"})",
+            "legendFormat": "Total /queue Requests"
+          }
+        ],
+        "datasource": "Prometheus"
+      },
+      {
+        "type": "table",
+        "title": "Redirects to Queue-it by Response Code",
+        "gridPos": {"x": 0, "y": 6, "w": 16, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (status) (http_server_requests_seconds_count{uri=\"/integration/queueit/queue\"})",
+            "legendFormat": "Status: {{status}}"
+          }
+        ],
+        "datasource": "Prometheus"
+      },
+      {
+        "type": "graph",
+        "title": "Active Virtual Users (VUs) Over Time",
+        "gridPos": {"x": 0, "y": 14, "w": 16, "h": 8},
+        "targets": [
+          {
+            "expr": "max_over_time(k6_vus[1m])",
+            "legendFormat": "Active VUs"
+          }
+        ],
+        "datasource": "Prometheus"
+      }
+    ]
+  },
+  "overwrite": true
+} 

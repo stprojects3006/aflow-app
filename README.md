@@ -160,6 +160,50 @@ The [issue tracker](https://github.com/spring-projects/spring-petclinic/issues) 
 For pull requests, editor preferences are available in the [editor config](.editorconfig) for easy use in common text editors. Read more and download plugins at <https://editorconfig.org>. All commits must include a __Signed-off-by__ trailer at the end of each commit message to indicate that the contributor agrees to the Developer Certificate of Origin.
 For additional details, please refer to the blog post [Hello DCO, Goodbye CLA: Simplifying Contributions to Spring](https://spring.io/blog/2025/01/06/hello-dco-goodbye-cla-simplifying-contributions-to-spring).
 
+## Enhanced Monitoring and IP Tracking Features
+
+This enhanced version of Spring PetClinic includes comprehensive monitoring capabilities with IP address tracking for geographic and network-based analysis.
+
+### Monitoring Stack
+- **Prometheus**: Metrics collection and storage
+- **Grafana**: Visualization and alerting with 5 comprehensive dashboards
+- **K6 Load Testing**: IP spoofing capabilities for realistic traffic simulation
+
+### Key Features
+- **IP Address Tracking**: Monitor traffic patterns by geographic regions
+- **Queue-it Integration**: Comprehensive metrics for queue management
+- **Error Analysis**: Detailed error tracking by IP region and status code
+- **Performance Monitoring**: Response times and throughput analysis
+- **Geographic Distribution**: Traffic analysis across different network regions
+
+### Quick Start with Monitoring
+```bash
+# Start the monitoring stack
+docker-compose up -d prometheus grafana
+
+# Import dashboards
+./import-grafana-dashboards.sh
+
+# Generate test traffic with IP spoofing
+./run-ip-spoofing-load-test.sh
+```
+
+### Dashboard Overview
+1. **QueueIt Integration Dashboard**: API performance and error tracking
+2. **QueueIt Error Tracking Dashboard**: Detailed error analysis by IP region
+3. **QueueIt Request Volume Dashboard**: Traffic patterns and volume analysis
+4. **Application HTTP Traffic Dashboard**: Overall application performance
+5. **Enhanced HTTP Traffic Dashboard**: Geographic traffic distribution
+
+### IP Address Regions Monitored
+- **North America**: `192.168.x.x` (private networks)
+- **Private Networks**: `10.x.x.x`, `172.16.x.x`
+- **Europe**: `193.x.x.x`, `194.x.x.x`
+- **Asia**: `202.x.x.x`, `203.x.x.x`
+- **Mobile Networks**: `100.64.x.x`, `100.65.x.x`
+
+For detailed setup instructions, see [GRAFANA_METRICS_SETUP.md](GRAFANA_METRICS_SETUP.md).
+
 ## License
 
 The Spring PetClinic sample application is released under version 2.0 of the [Apache License](https://www.apache.org/licenses/LICENSE-2.0).
