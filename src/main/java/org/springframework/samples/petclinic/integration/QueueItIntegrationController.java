@@ -50,30 +50,30 @@ public class QueueItIntegrationController {
 		Timer.Sample sample = Timer.start(meterRegistry);
 		meterRegistry.counter("queueit_validate_total").increment();
 		meterRegistry.counter("queueit_api_requests_total", "operation", "validate").increment();
-		
+
 		try {
 			String url = queueItSettings.getBaseUrl() + "/validate";
 			HttpHeaders headers = buildHeaders();
 			String body = String.format("{\"token\":\"%s\"}", token);
 			HttpEntity<String> entity = new HttpEntity<>(body, headers);
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-			
+
 			// Record success metrics
 			meterRegistry.counter("queueit_api_success_total", "operation", "validate").increment();
-			meterRegistry.gauge("queueit_api_response_time_seconds", 
-				Timer.builder("queueit_validate_duration")
-					.tag("operation", "validate")
-					.register(meterRegistry));
-			
+
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// Record error metrics
-			meterRegistry.counter("queueit_api_errors_total", "operation", "validate", "error_type", e.getClass().getSimpleName()).increment();
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "validate", "error_type",
+						e.getClass().getSimpleName())
+				.increment();
 			throw e;
-		} finally {
-			sample.stop(Timer.builder("queueit_validate_duration")
-				.tag("operation", "validate")
-				.register(meterRegistry));
+		}
+		finally {
+			sample
+				.stop(Timer.builder("queueit_validate_duration").tag("operation", "validate").register(meterRegistry));
 		}
 	}
 
@@ -83,26 +83,28 @@ public class QueueItIntegrationController {
 		Timer.Sample sample = Timer.start(meterRegistry);
 		meterRegistry.counter("queueit_queue_total").increment();
 		meterRegistry.counter("queueit_api_requests_total", "operation", "queue").increment();
-		
+
 		try {
 			String url = queueItSettings.getBaseUrl() + "/queue";
 			HttpHeaders headers = buildHeaders();
 			String body = String.format("{\"userId\":\"%s\"}", userId);
 			HttpEntity<String> entity = new HttpEntity<>(body, headers);
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-			
+
 			// Record success metrics
 			meterRegistry.counter("queueit_api_success_total", "operation", "queue").increment();
-			
+
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// Record error metrics
-			meterRegistry.counter("queueit_api_errors_total", "operation", "queue", "error_type", e.getClass().getSimpleName()).increment();
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "queue", "error_type", e.getClass().getSimpleName())
+				.increment();
 			throw e;
-		} finally {
-			sample.stop(Timer.builder("queueit_queue_duration")
-				.tag("operation", "queue")
-				.register(meterRegistry));
+		}
+		finally {
+			sample.stop(Timer.builder("queueit_queue_duration").tag("operation", "queue").register(meterRegistry));
 		}
 	}
 
@@ -112,26 +114,28 @@ public class QueueItIntegrationController {
 		Timer.Sample sample = Timer.start(meterRegistry);
 		meterRegistry.counter("queueit_cancel_total").increment();
 		meterRegistry.counter("queueit_api_requests_total", "operation", "cancel").increment();
-		
+
 		try {
 			String url = queueItSettings.getBaseUrl() + "/cancel";
 			HttpHeaders headers = buildHeaders();
 			String body = String.format("{\"sessionId\":\"%s\"}", sessionId);
 			HttpEntity<String> entity = new HttpEntity<>(body, headers);
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-			
+
 			// Record success metrics
 			meterRegistry.counter("queueit_api_success_total", "operation", "cancel").increment();
-			
+
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// Record error metrics
-			meterRegistry.counter("queueit_api_errors_total", "operation", "cancel", "error_type", e.getClass().getSimpleName()).increment();
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "cancel", "error_type", e.getClass().getSimpleName())
+				.increment();
 			throw e;
-		} finally {
-			sample.stop(Timer.builder("queueit_cancel_duration")
-				.tag("operation", "cancel")
-				.register(meterRegistry));
+		}
+		finally {
+			sample.stop(Timer.builder("queueit_cancel_duration").tag("operation", "cancel").register(meterRegistry));
 		}
 	}
 
@@ -141,23 +145,28 @@ public class QueueItIntegrationController {
 		Timer.Sample sample = Timer.start(meterRegistry);
 		meterRegistry.counter("queueit_extend_cookie_total").increment();
 		meterRegistry.counter("queueit_api_requests_total", "operation", "extend_cookie").increment();
-		
+
 		try {
 			String url = queueItSettings.getBaseUrl() + "/extend-cookie";
 			HttpHeaders headers = buildHeaders();
 			String body = String.format("{\"sessionId\":\"%s\"}", sessionId);
 			HttpEntity<String> entity = new HttpEntity<>(body, headers);
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-			
+
 			// Record success metrics
 			meterRegistry.counter("queueit_api_success_total", "operation", "extend_cookie").increment();
-			
+
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// Record error metrics
-			meterRegistry.counter("queueit_api_errors_total", "operation", "extend_cookie", "error_type", e.getClass().getSimpleName()).increment();
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "extend_cookie", "error_type",
+						e.getClass().getSimpleName())
+				.increment();
 			throw e;
-		} finally {
+		}
+		finally {
 			sample.stop(Timer.builder("queueit_extend_cookie_duration")
 				.tag("operation", "extend_cookie")
 				.register(meterRegistry));
@@ -170,25 +179,27 @@ public class QueueItIntegrationController {
 		Timer.Sample sample = Timer.start(meterRegistry);
 		meterRegistry.counter("queueit_status_total").increment();
 		meterRegistry.counter("queueit_api_requests_total", "operation", "status").increment();
-		
+
 		try {
 			String url = queueItSettings.getBaseUrl() + "/status";
 			HttpHeaders headers = buildHeaders();
 			HttpEntity<Void> entity = new HttpEntity<>(headers);
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-			
+
 			// Record success metrics
 			meterRegistry.counter("queueit_api_success_total", "operation", "status").increment();
-			
+
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// Record error metrics
-			meterRegistry.counter("queueit_api_errors_total", "operation", "status", "error_type", e.getClass().getSimpleName()).increment();
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "status", "error_type", e.getClass().getSimpleName())
+				.increment();
 			throw e;
-		} finally {
-			sample.stop(Timer.builder("queueit_status_duration")
-				.tag("operation", "status")
-				.register(meterRegistry));
+		}
+		finally {
+			sample.stop(Timer.builder("queueit_status_duration").tag("operation", "status").register(meterRegistry));
 		}
 	}
 
@@ -198,25 +209,27 @@ public class QueueItIntegrationController {
 		Timer.Sample sample = Timer.start(meterRegistry);
 		meterRegistry.counter("queueit_health_total").increment();
 		meterRegistry.counter("queueit_api_requests_total", "operation", "health").increment();
-		
+
 		try {
 			String url = queueItSettings.getBaseUrl() + "/health";
 			HttpHeaders headers = buildHeaders();
 			HttpEntity<Void> entity = new HttpEntity<>(headers);
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-			
+
 			// Record success metrics
 			meterRegistry.counter("queueit_api_success_total", "operation", "health").increment();
-			
+
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			// Record error metrics
-			meterRegistry.counter("queueit_api_errors_total", "operation", "health", "error_type", e.getClass().getSimpleName()).increment();
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "health", "error_type", e.getClass().getSimpleName())
+				.increment();
 			throw e;
-		} finally {
-			sample.stop(Timer.builder("queueit_health_duration")
-				.tag("operation", "health")
-				.register(meterRegistry));
+		}
+		finally {
+			sample.stop(Timer.builder("queueit_health_duration").tag("operation", "health").register(meterRegistry));
 		}
 	}
 
