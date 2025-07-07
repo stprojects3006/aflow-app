@@ -1,0 +1,16 @@
+version: '3.8'
+
+# AWS EC2 version of PetClinic app docker-compose
+services:
+  petclinic:
+    image: <aws_account_id>.dkr.ecr.<region>.amazonaws.com/petclinic-app:latest # Update with your ECR repo
+    ports:
+      - "8080:8080" # Expose for EC2 security group
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+    networks:
+      - petclinic-net
+
+networks:
+  petclinic-net:
+    driver: bridge 
