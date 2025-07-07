@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  petclinic:
+    image: petclinic-app:latest
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+    networks:
+      - petclinic-net
+
+networks:
+  petclinic-net:
+    driver: bridge 

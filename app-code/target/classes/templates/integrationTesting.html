@@ -1,0 +1,282 @@
+<style>
+  .integration-flex {
+    display: flex;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  .panel {
+    flex: 1;
+    background: #f7f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    min-width: 350px;
+  }
+  .metrics-table {
+    width: 100%;
+    margin-top: 2rem;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .metrics-table th, .metrics-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: left;
+  }
+  .metrics-table th {
+    background: #eaf3fa;
+    color: #2d7dd2;
+    font-weight: 600;
+  }
+  .metrics-table tr:last-child td {
+    border-bottom: none;
+  }
+  .metric-interpretation {
+    background: #f4f6f8;
+    border-left: 4px solid #2d7dd2;
+    padding: 1em 1.5em;
+    border-radius: 6px;
+    margin-bottom: 1em;
+  }
+  .testcase-menu {
+    margin-bottom: 1.5rem;
+  }
+  .testcase-menu select {
+    font-size: 1.1em;
+    padding: 0.4em 1em;
+    border-radius: 6px;
+    border: 1px solid #bbb;
+  }
+  .header-dropdown {
+    width: 100%;
+    margin-bottom: 1em;
+  }
+  .request-json, .response-json {
+    width: 100%;
+    min-height: 120px;
+    font-family: monospace;
+    font-size: 1em;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    padding: 0.7em;
+    background: #f4f6f8;
+    margin-bottom: 1em;
+  }
+  .send-btn {
+    background: #2d7dd2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.7em 2em;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-top: 1em;
+  }
+  .send-btn:hover {
+    background: #125699;
+  }
+  @media (max-width: 900px) {
+    .integration-flex { flex-direction: column; }
+  }
+</style>
+<div>
+  <h2>Integration Testing</h2>
+  <p>Select a test case, fill in the request data, and view the response and affected metrics. Metrics are also visible in <a href="http://localhost:3000/" target="_blank">Grafana</a>.</p>
+  <div class="testcase-menu">
+    <label for="testcaseSelect"><b>Test Case:</b></label>
+    <select id="testcaseSelect">
+      <option value="validate">TC-01: Validate queue token</option>
+      <option value="queue">TC-02: Simulate queue user</option>
+      <option value="cancel">TC-03: Cancel queue session</option>
+      <option value="extend-cookie">TC-04: Extend queue cookie</option>
+      <option value="status">TC-05: Get queue/event status</option>
+      <option value="health">TC-06: Health check</option>
+      <option value="simulate-event">TC-07: Simulate event (stub)</option>
+      <option value="session-info">TC-08: Inspect session info (stub)</option>
+      <option value="reset-test-state">TC-09: Reset test state (stub)</option>
+    </select>
+  </div>
+  <div class="integration-flex">
+    <div class="panel">
+      <h4>Request Data</h4>
+      <form id="requestForm">
+        <div id="requestFields"></div>
+        <label for="headerDropdown"><b>Header Set:</b></label>
+        <select id="headerDropdown" class="header-dropdown">
+          <option value="default">Default (api-key, customer-id, secret-key)</option>
+          <option value="custom">Custom (edit below)</option>
+        </select>
+        <textarea id="requestHeaders" class="request-json" rows="4" readonly>{
+  "api-key": "...",
+  "customer-id": "...",
+  "secret-key": "...",
+  "Content-Type": "application/json"
+}</textarea>
+        <label for="requestBody"><b>Request Body (JSON):</b></label>
+        <textarea id="requestBody" class="request-json" rows="6"></textarea>
+        <button type="submit" class="send-btn">Send Request</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h4>Response Data</h4>
+      <div>
+        <label><b>Status:</b></label> <span id="responseStatus">-</span>
+      </div>
+      <label for="responseBody"><b>Response Body:</b></label>
+      <textarea id="responseBody" class="response-json" rows="10" readonly></textarea>
+    </div>
+  </div>
+  <div style="margin-top:2em;">
+    <h4>Affected Metrics</h4>
+    <table class="metrics-table" id="metricsTable">
+      <thead>
+        <tr><th>Metric</th><th>Value</th><th>Interpretation</th></tr>
+      </thead>
+      <tbody id="metricsRows">
+        <!-- Filled by JS -->
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Test case definitions (fields, headers, metrics, interpretations)
+  const testCases = {
+    validate: {
+      fields: [{ name: 'token', label: 'Queue Token', type: 'text', required: true }],
+      defaultBody: '{\n  "token": "test-token"\n}',
+      metrics: [
+        { name: 'queueit_validate_total', interp: 'Number of validate requests sent.' },
+        { name: 'queueit_api_requests_total', interp: 'Total API requests.' },
+        { name: 'queueit_api_response_time_seconds', interp: 'API response time (seconds).' },
+        { name: 'queueit_api_errors_total', interp: 'Total API errors.' }
+      ]
+    },
+    queue: {
+      fields: [{ name: 'userId', label: 'User ID', type: 'text', required: true }],
+      defaultBody: '{\n  "userId": "test-user"\n}',
+      metrics: [
+        { name: 'queueit_queue_total', interp: 'Number of queue join requests.' },
+        { name: 'queueit_api_requests_total', interp: 'Total API requests.' },
+        { name: 'queueit_api_response_time_seconds', interp: 'API response time (seconds).' }
+      ]
+    },
+    cancel: {
+      fields: [{ name: 'sessionId', label: 'Session ID', type: 'text', required: true }],
+      defaultBody: '{\n  "sessionId": "test-session"\n}',
+      metrics: [
+        { name: 'queueit_cancel_total', interp: 'Number of cancel requests.' },
+        { name: 'queueit_api_requests_total', interp: 'Total API requests.' },
+        { name: 'queueit_api_errors_total', interp: 'Total API errors.' }
+      ]
+    },
+    'extend-cookie': {
+      fields: [{ name: 'sessionId', label: 'Session ID', type: 'text', required: true }],
+      defaultBody: '{\n  "sessionId": "test-session"\n}',
+      metrics: [
+        { name: 'queueit_extend_cookie_total', interp: 'Number of cookie extension requests.' },
+        { name: 'queueit_api_requests_total', interp: 'Total API requests.' }
+      ]
+    },
+    status: {
+      fields: [],
+      defaultBody: '',
+      metrics: [
+        { name: 'queueit_status_total', interp: 'Number of status checks.' },
+        { name: 'queueit_api_requests_total', interp: 'Total API requests.' }
+      ]
+    },
+    health: {
+      fields: [],
+      defaultBody: '',
+      metrics: [
+        { name: 'queueit_health_total', interp: 'Number of health checks.' },
+        { name: 'queueit_api_requests_total', interp: 'Total API requests.' }
+      ]
+    },
+    'simulate-event': {
+      fields: [],
+      defaultBody: '',
+      metrics: [
+        { name: 'queueit_simulate_event_total', interp: 'Number of simulate event requests.' }
+      ]
+    },
+    'session-info': {
+      fields: [],
+      defaultBody: '',
+      metrics: [
+        { name: 'queueit_session_info_total', interp: 'Number of session info requests.' }
+      ]
+    },
+    'reset-test-state': {
+      fields: [],
+      defaultBody: '',
+      metrics: [
+        { name: 'queueit_reset_test_state_total', interp: 'Number of reset test state requests.' }
+      ]
+    }
+  };
+
+  // Populate form fields and default body for selected test case
+  function updateTestCaseUI() {
+    const testcase = document.getElementById('testcaseSelect').value;
+    const tc = testCases[testcase];
+    const fieldsDiv = document.getElementById('requestFields');
+    fieldsDiv.innerHTML = '';
+    tc.fields.forEach(f => {
+      fieldsDiv.innerHTML += `<label><b>${f.label}:</b> <input type="${f.type}" name="${f.name}" required=${f.required}></label><br/>`;
+    });
+    document.getElementById('requestBody').value = tc.defaultBody;
+    // Metrics table
+    const metricsRows = document.getElementById('metricsRows');
+    metricsRows.innerHTML = '';
+    tc.metrics.forEach(m => {
+      metricsRows.innerHTML += `<tr><td><code>${m.name}</code></td><td id="metric-${m.name}">-</td><td>${m.interp}</td></tr>`;
+    });
+  }
+
+  document.getElementById('testcaseSelect').addEventListener('change', updateTestCaseUI);
+  updateTestCaseUI();
+
+  // Header dropdown logic
+  document.getElementById('headerDropdown').addEventListener('change', function() {
+    const val = this.value;
+    const headersArea = document.getElementById('requestHeaders');
+    if (val === 'default') {
+      headersArea.value = '{\n  "api-key": "...",\n  "customer-id": "...",\n  "secret-key": "...",\n  "Content-Type": "application/json"\n}';
+      headersArea.readOnly = true;
+    } else {
+      headersArea.readOnly = false;
+    }
+  });
+
+  // Handle form submit
+  document.getElementById('requestForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const testcase = document.getElementById('testcaseSelect').value;
+    const tc = testCases[testcase];
+    let url = '/integration/queueit/' + testcase;
+    let method = (testcase === 'status' || testcase === 'health' || testcase === 'session-info') ? 'GET' : 'POST';
+    let headers = {};
+    try { headers = JSON.parse(document.getElementById('requestHeaders').value); } catch {}
+    let body = document.getElementById('requestBody').value;
+    let params = { method: method, headers: headers };
+    if (method === 'POST') params.body = body;
+    document.getElementById('responseStatus').innerText = '-';
+    document.getElementById('responseBody').value = '';
+    fetch(url, params)
+      .then(async r => {
+        document.getElementById('responseStatus').innerText = r.status;
+        let text = await r.text();
+        document.getElementById('responseBody').value = text;
+        // Optionally, fetch metrics from backend or Prometheus here and update metrics table
+      })
+      .catch(e => {
+        document.getElementById('responseStatus').innerText = 'Error';
+        document.getElementById('responseBody').value = e;
+      });
+  });
+});
+</script> 

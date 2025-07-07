@@ -60,18 +60,24 @@ public class qFilter implements Filter {
 		logger.info("Passing through filter....FFCS");
 
 		// Increment total requests metric
-		meterRegistry.counter("queueit_filter_requests_total").increment();
+		if (meterRegistry != null) {
+			meterRegistry.counter("queueit_filter_requests_total").increment();
+		}
 
 		// Call the validation function before the rest of the filter chain is processed
 		boolean proceed = doValidation((HttpServletRequest) request, (HttpServletResponse) response);
 
 		// Passes the request along the filter chain
 		if (proceed && !response.isCommitted()) {
-			meterRegistry.counter("queueit_filter_proceed_total").increment();
+			if (meterRegistry != null) {
+				meterRegistry.counter("queueit_filter_proceed_total").increment();
+			}
 			chain.doFilter((HttpServletRequest) request, (HttpServletResponse) response);
 		}
 		else {
-			meterRegistry.counter("queueit_filter_blocked_total").increment();
+			if (meterRegistry != null) {
+				meterRegistry.counter("queueit_filter_blocked_total").increment();
+			}
 		}
 	}
 
@@ -113,11 +119,13 @@ public class qFilter implements Filter {
 
 			if (validationResult.doRedirect()) {
 				// Record redirect metrics
-				meterRegistry
-					.counter("queueit_redirects_total", "action_type",
-							validationResult.getActionType() != null ? validationResult.getActionType() : "unknown",
-							"is_ajax", String.valueOf(validationResult.isAjaxResult))
-					.increment();
+				if (meterRegistry != null) {
+					meterRegistry
+						.counter("queueit_redirects_total", "action_type",
+								validationResult.getActionType() != null ? validationResult.getActionType() : "unknown",
+								"is_ajax", String.valueOf(validationResult.isAjaxResult))
+						.increment();
+				}
 
 				if (validationResult.isAjaxResult) {
 					// Adding no cache headers to prevent browsers to cache requests
@@ -135,13 +143,17 @@ public class qFilter implements Filter {
 					response.setHeader("Access-Control-Expose-Headers",
 							validationResult.getAjaxQueueRedirectHeaderKey());
 
-					meterRegistry.counter("queueit_ajax_redirects_total").increment();
+					if (meterRegistry != null) {
+						meterRegistry.counter("queueit_ajax_redirects_total").increment();
+					}
 				}
 				else {
 					// Send the user to the queue - either because hash was missing or
 					// because is was invalid
 					response.sendRedirect(validationResult.getRedirectUrl());
-					meterRegistry.counter("queueit_http_redirects_total").increment();
+					if (meterRegistry != null) {
+						meterRegistry.counter("queueit_http_redirects_total").increment();
+					}
 				}
 				response.getOutputStream().flush();
 				response.getOutputStream().close();
@@ -149,10 +161,12 @@ public class qFilter implements Filter {
 			}
 			else {
 				// Record successful validation metrics
-				meterRegistry
-					.counter("queueit_validations_success_total", "action_type",
-							validationResult.getActionType() != null ? validationResult.getActionType() : "none")
-					.increment();
+				if (meterRegistry != null) {
+					meterRegistry
+						.counter("queueit_validations_success_total", "action_type",
+								validationResult.getActionType() != null ? validationResult.getActionType() : "none")
+						.increment();
+				}
 
 				String queryString = request.getQueryString();
 				// Request can continue - we remove queueittoken form querystring
@@ -162,7 +176,9 @@ public class qFilter implements Filter {
 					response.sendRedirect(pureUrl);
 					response.getOutputStream().flush();
 					response.getOutputStream().close();
-					meterRegistry.counter("queueit_token_removal_redirects_total").increment();
+					if (meterRegistry != null) {
+						meterRegistry.counter("queueit_token_removal_redirects_total").increment();
+					}
 				}
 			}
 		}
@@ -170,8 +186,10 @@ public class qFilter implements Filter {
 			// There was an error validating the request
 			// Use your own logging framework to log the Exception
 			// This was a configuration exception, so we let the user continue
-			meterRegistry.counter("queueit_validation_errors_total", "error_type", ex.getClass().getSimpleName())
-				.increment();
+			if (meterRegistry != null) {
+				meterRegistry.counter("queueit_validation_errors_total", "error_type", ex.getClass().getSimpleName())
+					.increment();
+			}
 		}
 		return true;
 	}

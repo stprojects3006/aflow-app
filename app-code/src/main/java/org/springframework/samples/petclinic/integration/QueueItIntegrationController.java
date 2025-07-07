@@ -79,10 +79,19 @@ public class QueueItIntegrationController {
 
 	@PostMapping("/queue")
 	@ResponseBody
-	public ResponseEntity<String> simulateQueueUser(@RequestParam String userId) {
+	public ResponseEntity<String> simulateQueueUser(@RequestParam String userId, @RequestParam(required = false) Integer status) {
 		Timer.Sample sample = Timer.start(meterRegistry);
 		meterRegistry.counter("queueit_queue_total").increment();
 		meterRegistry.counter("queueit_api_requests_total", "operation", "queue").increment();
+
+		// If status is provided, return a response with that status code for testing
+		if (status != null) {
+			String msg = "Simulated response for status code: " + status;
+			// Record a metric for this status code
+			meterRegistry.counter("queueit_api_test_status_total", "status", String.valueOf(status)).increment();
+			sample.stop(Timer.builder("queueit_queue_duration").tag("operation", "queue").register(meterRegistry));
+			return ResponseEntity.status(status).body(msg);
+		}
 
 		try {
 			String url = queueItSettings.getBaseUrl() + "/queue";
