@@ -108,25 +108,29 @@ build_application() {
     print_status "Building PetClinic application..."
     
     # Clean previous builds
-    if [ -d "../../target" ]; then
+    if [ -d "../target" ]; then
         print_status "Cleaning previous build..."
-        mvn clean
+        (cd .. && mvn clean)
     fi
+    
+    # Apply Spring Java Format
+    print_status "Applying Spring Java Format..."
+    (cd .. && mvn spring-javaformat:apply)
     
     # Build the application
     print_status "Compiling and packaging application..."
-    mvn package -DskipTests
+    (cd .. && mvn package -DskipTests)
     
     # Check if build was successful
-    if [ ! -f "../../target/spring-petclinic-3.5.0-SNAPSHOT.jar" ]; then
+    if [ ! -f "../target/spring-petclinic-3.5.0-SNAPSHOT.jar" ]; then
         print_error "Build failed. JAR file not found."
         exit 1
     fi
     
     # Copy JAR to jars directory
     print_status "Copying JAR to jars directory..."
-    mkdir -p ../../jars
-    cp ../../target/spring-petclinic-3.5.0-SNAPSHOT.jar ../../jars/pet-clinkc.jar
+    mkdir -p ../jars
+    cp ../target/spring-petclinic-3.5.0-SNAPSHOT.jar ../jars/pet-clinkc.jar
     
     print_success "Application built successfully"
 }
@@ -135,7 +139,7 @@ build_application() {
 run_tests() {
     print_status "Running tests..."
     
-    if mvn test; then
+    if (cd .. && mvn test); then
         print_success "All tests passed"
     else
         print_error "Tests failed"
@@ -164,7 +168,7 @@ clean_docker_images() {
 build_docker_image() {
     print_status "Building Docker image..."
     
-    if docker build -t $DOCKER_IMAGE ../..; then
+    if docker build -t $DOCKER_IMAGE ..; then
         print_success "Docker image built successfully"
     else
         print_error "Docker build failed"

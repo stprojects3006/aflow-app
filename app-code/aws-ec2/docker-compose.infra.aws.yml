@@ -4,6 +4,7 @@ version: '3.8'
 services:
   mysql:
     image: mysql:8.0
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: petclinic
@@ -24,6 +25,7 @@ services:
 
   postgres:
     image: postgres:17
+    container_name: postgres
     environment:
       POSTGRES_DB: petclinic
       POSTGRES_USER: petclinic
@@ -43,10 +45,11 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.50.0
+    container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ../../prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -60,6 +63,7 @@ services:
 
   grafana:
     image: grafana/grafana:12.0.2
+    container_name: grafana
     ports:
       - "3000:3000"
     environment:
@@ -67,7 +71,7 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
-      - ../../grafana.ini:/etc/grafana/grafana.ini
+      - ../grafana.ini:/etc/grafana/grafana.ini
     networks:
       - petclinic-net
     depends_on:
@@ -75,6 +79,7 @@ services:
 
   nginx:
     image: nginx:alpine
+    container_name: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -96,4 +101,5 @@ volumes:
 
 networks:
   petclinic-net:
+    name: petclinic-net
     driver: bridge 

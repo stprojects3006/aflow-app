@@ -162,7 +162,7 @@ check_service_health() {
     fi
     
     # Check Prometheus
-    if curl -f http://<your-ec2-public-dns>:9090/-/healthy >/dev/null 2>&1; then
+    if curl -f http://localhost:9090/-/healthy >/dev/null 2>&1; then
         print_success "Prometheus is healthy"
     else
         print_warning "Prometheus health check failed"
@@ -170,7 +170,7 @@ check_service_health() {
     fi
     
     # Check Grafana
-    if curl -f http://<your-ec2-public-dns>:3000/api/health >/dev/null 2>&1; then
+    if curl -f http://localhost:3000/api/health >/dev/null 2>&1; then
         print_success "Grafana is healthy"
     else
         print_warning "Grafana health check failed"
@@ -312,7 +312,7 @@ wait_for_infrastructure() {
     # Wait for Prometheus
     attempt=1
     while [ $attempt -le $max_attempts ]; do
-        if curl -f http://<your-ec2-public-dns>:9090/-/healthy >/dev/null 2>&1; then
+        if curl -f http://localhost:9090/-/healthy >/dev/null 2>&1; then
             print_success "Prometheus is ready"
             break
         fi
@@ -329,7 +329,7 @@ wait_for_infrastructure() {
     # Wait for Grafana
     attempt=1
     while [ $attempt -le $max_attempts ]; do
-        if curl -f http://<your-ec2-public-dns>:3000/api/health >/dev/null 2>&1; then
+        if curl -f http://localhost:3000/api/health >/dev/null 2>&1; then
             print_success "Grafana is ready"
             break
         fi
