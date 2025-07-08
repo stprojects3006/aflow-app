@@ -178,7 +178,6 @@ public class QueueItIntegrationController {
 			sample.stop(Timer.builder("queueit_health_duration").tag("operation", "health").register(meterRegistry));
 		}
 	}
-	*/
 
 	// Queue endpoint using IntegrationConfigProvider pattern
 	@GetMapping("/queue")
@@ -295,8 +294,8 @@ public class QueueItIntegrationController {
 
 	@PostMapping("/health")
 	public String handleHealth(Model model) {
-		ResponseEntity<String> response = healthCheck();
-		model.addAttribute("response", response.getBody());
+		// healthCheck() method is disabled, return error response
+		model.addAttribute("response", "{\"error\":\"Health endpoint is disabled\"}");
 		return "integration/queueit/health";
 	}
 

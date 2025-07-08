@@ -1,5 +1,6 @@
 package org.springframework.samples.petclinic.system;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.LocaleResolver;
@@ -55,6 +56,20 @@ public class WebConfiguration implements WebMvcConfigurer {
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(localeChangeInterceptor());
+	}
+
+	/**
+	 * Registers the ClientIpFilter to capture client IP addresses in metrics.
+	 * @param clientIpFilter the filter to register
+	 * @return FilterRegistrationBean for the client IP filter
+	 */
+	@Bean
+	public FilterRegistrationBean<ClientIpFilter> clientIpFilterRegistration(ClientIpFilter clientIpFilter) {
+		FilterRegistrationBean<ClientIpFilter> registrationBean = new FilterRegistrationBean<>();
+		registrationBean.setFilter(clientIpFilter);
+		registrationBean.addUrlPatterns("/*");
+		registrationBean.setOrder(1); // High priority to capture IP early
+		return registrationBean;
 	}
 
 }

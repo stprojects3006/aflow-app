@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" th:replace="~{fragments/layout :: layout (~{::body},'integration')}">
+<body>
+  <h2>TC-01: Validate Queue Token</h2>
+  <form th:action="@{/integration/queueit/validate}" method="post" class="form-horizontal">
+    <div class="form-group">
+      <label for="token">Queue Token</label>
+      <input type="text" class="form-control" id="token" name="token" required />
+    </div>
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary">Validate Token</button>
+    </div>
+  </form>
+  <div th:if="${response != null}">
+    <h4>Response</h4>
+    <pre th:text="${response}"></pre>
+  </div>
+</body>
+</html> 

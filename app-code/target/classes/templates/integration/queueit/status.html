@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" th:replace="~{fragments/layout :: layout (~{::body},'integration')}">
+<body>
+  <h2>TC-05: Get Queue/Event Status</h2>
+  <form th:action="@{/integration/queueit/status}" method="get" class="form-horizontal">
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary">Get Status</button>
+    </div>
+  </form>
+  <div th:if="${response != null}">
+    <h4>Response</h4>
+    <pre th:text="${response}"></pre>
+  </div>
+</body>
+</html> 

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" th:replace="~{fragments/layout :: layout (~{::body},'integration')}">
+<body>
+  <h2>TC-02: Simulate Queue User</h2>
+  <form th:action="@{/integration/queueit/queue}" method="post" class="form-horizontal">
+    <div class="form-group">
+      <label for="userId">User ID</label>
+      <input type="text" class="form-control" id="userId" name="userId" required />
+    </div>
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary">Simulate Queue</button>
+    </div>
+  </form>
+  <div th:if="${response != null}">
+    <h4>Response</h4>
+    <pre th:text="${response}"></pre>
+  </div>
+  <div th:if="${showOverlay}">
+    <!-- Overlay Modal -->
+    <div class="modal fade show" id="queueOverlay" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);" aria-modal="true" role="dialog">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Queue-it Overlay</h5>
+          </div>
+          <div class="modal-body">
+            <p>You have been placed in the queue or cleared the queue. This is a simulated overlay.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('queueOverlay').style.display='none'">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Optionally, focus the modal or add more logic here
+    </script>
+  </div>
+</body>
+</html> 

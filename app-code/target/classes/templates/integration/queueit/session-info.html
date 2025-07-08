@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" th:replace="~{fragments/layout :: layout (~{::body},'integration')}">
+<body>
+  <h2>TC-08: Inspect Session Info (Stub)</h2>
+  <form th:action="@{/integration/queueit/session-info}" method="get" class="form-horizontal">
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary">Inspect Session Info</button>
+    </div>
+  </form>
+  <div th:if="${response != null}">
+    <h4>Response</h4>
+    <pre th:text="${response}"></pre>
+  </div>
+</body>
+</html> 
