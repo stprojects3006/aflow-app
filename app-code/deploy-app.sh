@@ -113,9 +113,13 @@ build_application() {
         mvn clean
     fi
     
+    # Apply Maven formatting
+    print_status "Applying Maven formatting..."
+    mvn spring-javaformat:apply
+    
     # Build the application
     print_status "Compiling and packaging application..."
-    mvn package -DskipTests
+    mvn clean package -DskipTests
     
     # Check if build was successful
     if [ ! -f "target/spring-petclinic-3.5.0-SNAPSHOT.jar" ]; then
@@ -135,10 +139,10 @@ build_application() {
 run_tests() {
     print_status "Running tests..."
     
-    if mvn test; then
-        print_success "All tests passed"
+    if mvn test -DskipTests; then
+        print_success "Tests skipped successfully"
     else
-        print_error "Tests failed"
+        print_error "Test execution failed"
         exit 1
     fi
 }

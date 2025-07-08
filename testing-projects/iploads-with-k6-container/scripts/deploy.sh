@@ -19,7 +19,7 @@ DOCKER_DIR="$PROJECT_ROOT/docker"
 
 # Default values
 AWS_REGION=${AWS_REGION:-"us-east-1"}
-TARGET_URL=${TARGET_URL:-"http://localhost:8080"}
+TARGET_URL=${TARGET_URL:-"https://affluenceit.com"}
 TEST_TYPE=${TEST_TYPE:-"basic"}
 
 # Function to print colored output
@@ -149,7 +149,7 @@ run_initial_test() {
     print_status "Starting ECS task..."
     TASK_ARN=$(aws ecs run-task \
         --cluster "$ECS_CLUSTER_NAME" \
-        --task-definition k6-load-test-k6-task \
+        --task-definition arn:aws:ecs:us-east-1:786407478307:task-definition/k6-load-test-k6-task:1 \
         --launch-type FARGATE \
         --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
         --query 'tasks[0].taskArn' \
@@ -208,7 +208,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [OPTIONS]"
             echo "Options:"
             echo "  --region REGION     AWS region (default: us-east-1)"
-            echo "  --target-url URL    Target URL for testing (default: http://localhost:8080)"
+            echo "  --target-url URL    Target URL for testing (default: https://affluenceit.com)"
             echo "  --test-type TYPE    Test type: basic, stress, spike (default: basic)"
             echo "  --help              Show this help message"
             exit 0

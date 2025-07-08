@@ -58,6 +58,8 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
+      - '--web.route-prefix=/graph'
+      - '--web.external-url=https://affluenceit.com/graph/'
     networks:
       - petclinic-net
 
@@ -69,6 +71,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://affluenceit.com/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana_data:/var/lib/grafana
       - ../grafana.ini:/etc/grafana/grafana.ini

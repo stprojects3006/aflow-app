@@ -17,6 +17,8 @@ APP_NAME="petclinic"
 DOCKER_IMAGE="petclinic-app:latest"
 INFRA_COMPOSE_FILE="docker-compose.infra.aws.yml"
 APP_COMPOSE_FILE="docker-compose.app.aws.yml"
+GRAFANA_URL="https://affluenceit.com/grafana"
+GRAFANA_DASHBOARDS_DIR="../grafana-dashboards"
 
 # Function to print colored output
 print_status() {
@@ -93,10 +95,9 @@ stop_containers() {
 }
 
 # Function to import Grafana dashboards
-grafana_api_url="http://<your-ec2-public-dns>:3000/api/dashboards/db"
+grafana_api_url="https://affluenceit.com/grafana/api/dashboards/db"
 grafana_user="admin"
 grafana_pass="admin"
-grafana_dashboards_dir="../../grafana-dashboards"
 
 import_grafana_dashboards() {
     print_status "Importing Grafana dashboards..."
@@ -104,20 +105,20 @@ import_grafana_dashboards() {
     # Wait a bit for Grafana to be fully ready
     sleep 5
     
-    if ! curl -sf http://<your-ec2-public-dns>:3000/api/health >/dev/null; then
+    if ! curl -sf https://affluenceit.com/grafana/api/health >/dev/null; then
         print_warning "Grafana is not healthy or not running. Skipping dashboard import."
         return
     fi
     
-    if [ ! -d "$grafana_dashboards_dir" ]; then
-        print_warning "Grafana dashboards directory not found: $grafana_dashboards_dir"
+    if [ ! -d "$GRAFANA_DASHBOARDS_DIR" ]; then
+        print_warning "Grafana dashboards directory not found: $GRAFANA_DASHBOARDS_DIR"
         return
     fi
     
     local imported_count=0
     local total_count=0
     
-    for dashboard in "$grafana_dashboards_dir"/*.json; do
+    for dashboard in "$GRAFANA_DASHBOARDS_DIR"/*.json; do
         if [ -f "$dashboard" ]; then
             total_count=$((total_count + 1))
             print_status "Importing dashboard: $(basename "$dashboard")"
@@ -143,7 +144,7 @@ import_grafana_dashboards() {
     if [ $total_count -gt 0 ]; then
         print_success "Dashboard import completed: $imported_count/$total_count dashboards imported"
     else
-        print_warning "No dashboard files found in $grafana_dashboards_dir"
+        print_warning "No dashboard files found in $GRAFANA_DASHBOARDS_DIR"
     fi
 }
 
@@ -154,7 +155,7 @@ check_service_health() {
     local all_healthy=true
     
     # Check PetClinic application
-    if curl -f http://<your-ec2-public-dns>:8080/actuator/health >/dev/null 2>&1; then
+    if curl -f https://affluenceit.com/actuator/health >/dev/null 2>&1; then
         print_success "PetClinic application is healthy"
     else
         print_warning "PetClinic application health check failed"
@@ -178,7 +179,7 @@ check_service_health() {
     fi
     
     # Check Nginx
-    if curl -f http://<your-ec2-public-dns>/ >/dev/null 2>&1; then
+    if curl -f https://affluenceit.com/ >/dev/null 2>&1; then
         print_success "Nginx is healthy"
     else
         print_warning "Nginx health check failed"
@@ -200,18 +201,18 @@ display_access_info() {
     echo "=========================================="
     echo ""
     echo "📱 Application Access:"
-    echo "   • Main Application: http://<your-ec2-public-dns>/"
-    echo "   • Direct PetClinic: http://<your-ec2-public-dns>:8080/"
+    echo "   • Main Application: https://affluenceit.com/"
+    echo "   • Direct PetClinic: https://affluenceit.com:8080/"
     echo ""
     echo "📊 Monitoring Access:"
-    echo "   • Grafana Dashboard: http://<your-ec2-public-dns>/grafana/"
-    echo "   • Direct Grafana: http://<your-ec2-public-dns>:3000/ (admin/admin)"
-    echo "   • Prometheus: http://<your-ec2-public-dns>/prometheus/"
-    echo "   • Direct Prometheus: http://<your-ec2-public-dns>:9090/"
+    echo "   • Grafana Dashboard: https://affluenceit.com/grafana/"
+    echo "   • Direct Grafana: https://affluenceit.com:3000/ (admin/admin)"
+    echo "   • Prometheus: https://affluenceit.com/prometheus/"
+    echo "   • Direct Prometheus: https://affluenceit.com:9090/"
     echo ""
     echo "🗄️  Database Access:"
-    echo "   • MySQL: <your-ec2-public-dns>:3306 (petclinic/petclinic)"
-    echo "   • PostgreSQL: <your-ec2-public-dns>:5432 (petclinic/petclinic)"
+    echo "   • MySQL: affluenceit.com:3306 (petclinic/petclinic)"
+    echo "   • PostgreSQL: affluenceit.com:5432 (petclinic/petclinic)"
     echo ""
     echo "🔧 Management Commands:"
     echo "   • View logs: docker-compose logs -f [service]"
@@ -220,7 +221,7 @@ display_access_info() {
     echo "   • View status: docker-compose ps"
     echo ""
     echo "📈 QueueIt Integration Testing:"
-    echo "   • Integration Test Page: http://<your-ec2-public-dns>:8080/integration/queueit"
+    echo "   • Integration Test Page: https://affluenceit.com/integration/queueit"
     echo ""
 }
 

@@ -2,6 +2,8 @@
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/PetClinicRuntimeHints.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/config/RestTemplateConfig.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/integration/QueueItIntegrationController.java
+/Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/integration/QueueItIntegrationFilter.java
+/Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/integration/QueueItSettings.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/model/Person.java
@@ -17,10 +19,6 @@
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/owner/Visit.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/owner/VisitController.java
-/Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/service/FilterConfig.java
-/Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/service/IntegrationConfigProvider.java
-/Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/service/QueueItSettings.java
-/Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/service/qFilter.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/system/CrashController.java
 /Users/stmum0107/Documents/projectQ/aflow-app/app-code/src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java

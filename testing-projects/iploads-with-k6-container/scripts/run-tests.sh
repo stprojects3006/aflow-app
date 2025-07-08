@@ -20,6 +20,9 @@ TEST_TYPE=${TEST_TYPE:-"basic"}
 DURATION=${DURATION:-"5m"}
 USERS=${USERS:-"10"}
 
+# If there is a TARGET_URL variable, set it to https://affluenceit.com by default
+TARGET_URL=${TARGET_URL:-"https://affluenceit.com"}
+
 # Function to print colored output
 print_status() {
     echo -e "${GREEN}[INFO]${NC} $1"
@@ -64,7 +67,7 @@ run_basic_test() {
     # Run ECS task with basic test
     TASK_ARN=$(aws ecs run-task \
         --cluster "$ECS_CLUSTER_NAME" \
-        --task-definition k6-load-test-k6-task \
+        --task-definition arn:aws:ecs:us-east-1:786407478307:task-definition/k6-load-test-k6-task:1 \
         --launch-type FARGATE \
         --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
         --overrides "{\"containerOverrides\":[{\"name\":\"k6-load-test\",\"environment\":[{\"name\":\"TEST_TYPE\",\"value\":\"basic\"}]}]}" \
@@ -85,7 +88,7 @@ run_stress_test() {
     # Run ECS task with stress test
     TASK_ARN=$(aws ecs run-task \
         --cluster "$ECS_CLUSTER_NAME" \
-        --task-definition k6-load-test-k6-task \
+        --task-definition arn:aws:ecs:us-east-1:786407478307:task-definition/k6-load-test-k6-task:1 \
         --launch-type FARGATE \
         --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
         --overrides "{\"containerOverrides\":[{\"name\":\"k6-load-test\",\"environment\":[{\"name\":\"TEST_TYPE\",\"value\":\"stress\"}]}]}" \
@@ -106,7 +109,7 @@ run_spike_test() {
     # Run ECS task with spike test
     TASK_ARN=$(aws ecs run-task \
         --cluster "$ECS_CLUSTER_NAME" \
-        --task-definition k6-load-test-k6-task \
+        --task-definition arn:aws:ecs:us-east-1:786407478307:task-definition/k6-load-test-k6-task:1 \
         --launch-type FARGATE \
         --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
         --overrides "{\"containerOverrides\":[{\"name\":\"k6-load-test\",\"environment\":[{\"name\":\"TEST_TYPE\",\"value\":\"spike\"}]}]}" \

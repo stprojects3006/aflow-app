@@ -5,12 +5,19 @@ import io.micrometer.core.instrument.Timer;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.samples.petclinic.service.QueueItSettings;
+import org.springframework.samples.petclinic.integration.QueueItSettings;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 
 @Controller
 @RequestMapping("/integration/queueit")
@@ -22,6 +29,15 @@ public class QueueItIntegrationController {
 
 	private final QueueItSettings queueItSettings;
 
+	// Hardcoded constants matching IntegrationConfigProvider pattern
+	private static final String CUSTOMER_ID = "futuraforge";
+
+	private static final String API_KEY = "4607e3f0-dcb2-4714-9570-45d7e662c45f";
+
+	private static final int DOWNLOAD_TIMEOUT_MS = 4000;
+
+	private static final int MAX_RETRY_COUNT = 5;
+
 	public QueueItIntegrationController(RestTemplate restTemplate, MeterRegistry meterRegistry,
 			QueueItSettings queueItSettings) {
 		this.restTemplate = restTemplate;
@@ -29,14 +45,17 @@ public class QueueItIntegrationController {
 		this.queueItSettings = queueItSettings;
 	}
 
-	// Helper to build headers for Queue-it API
+	// Helper to build headers for Queue-it API (aligned with IntegrationConfigProvider)
 	private HttpHeaders buildHeaders() {
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.set("api-key", queueItSettings.getApiKey());
-		headers.set("customer-id", queueItSettings.getCustomerId());
-		headers.set("secret-key", queueItSettings.getSecretKey());
+		headers.set("api-key", API_KEY);
 		return headers;
+	}
+
+	// Helper to construct base URL dynamically (aligned with IntegrationConfigProvider
+	// pattern)
+	private String buildBaseUrl() {
+		return String.format("https://%s.queue-it.net", CUSTOMER_ID);
 	}
 
 	@GetMapping("")
@@ -44,174 +63,85 @@ public class QueueItIntegrationController {
 		return "integrationTesting";
 	}
 
-	@PostMapping("/validate")
+	// Get integration configuration (aligned with IntegrationConfigProvider)
+	@GetMapping("/config")
 	@ResponseBody
-	public ResponseEntity<String> validateQueueToken(@RequestParam String token) {
+	public ResponseEntity<String> getIntegrationConfig() {
 		Timer.Sample sample = Timer.start(meterRegistry);
-		meterRegistry.counter("queueit_validate_total").increment();
-		meterRegistry.counter("queueit_api_requests_total", "operation", "validate").increment();
+		meterRegistry.counter("queueit_config_total").increment();
+		meterRegistry.counter("queueit_api_requests_total", "operation", "config").increment();
 
 		try {
-			String url = queueItSettings.getBaseUrl() + "/validate";
-			HttpHeaders headers = buildHeaders();
-			String body = String.format("{\"token\":\"%s\"}", token);
-			HttpEntity<String> entity = new HttpEntity<>(body, headers);
-			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+			// Use the same URL pattern as IntegrationConfigProvider
+			String url = String.format("https://%s.queue-it.net/status/integrationconfig/secure/%s", CUSTOMER_ID,
+					CUSTOMER_ID);
+			System.out.println("[DEBUG] QueueIt API URL (config): " + url);
+
+			// Use the same HTTP connection pattern as IntegrationConfigProvider
+			String jsonText = getJsonText(url);
 
 			// Record success metrics
-			meterRegistry.counter("queueit_api_success_total", "operation", "validate").increment();
+			meterRegistry.counter("queueit_api_success_total", "operation", "config").increment();
 
-			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+			return ResponseEntity.ok(jsonText);
 		}
 		catch (Exception e) {
+			System.out.println("[DEBUG] Exception in getIntegrationConfig: " + e.getMessage());
+			e.printStackTrace();
 			// Record error metrics
 			meterRegistry
-				.counter("queueit_api_errors_total", "operation", "validate", "error_type",
-						e.getClass().getSimpleName())
+				.counter("queueit_api_errors_total", "operation", "config", "error_type", e.getClass().getSimpleName())
 				.increment();
 			throw e;
 		}
 		finally {
-			sample
-				.stop(Timer.builder("queueit_validate_duration").tag("operation", "validate").register(meterRegistry));
+			sample.stop(Timer.builder("queueit_config_duration").tag("operation", "config").register(meterRegistry));
 		}
 	}
 
-	@PostMapping("/queue")
-	@ResponseBody
-	public ResponseEntity<String> simulateQueueUser(@RequestParam String userId, @RequestParam(required = false) Integer status) {
-		Timer.Sample sample = Timer.start(meterRegistry);
-		meterRegistry.counter("queueit_queue_total").increment();
-		meterRegistry.counter("queueit_api_requests_total", "operation", "queue").increment();
-
-		// If status is provided, return a response with that status code for testing
-		if (status != null) {
-			String msg = "Simulated response for status code: " + status;
-			// Record a metric for this status code
-			meterRegistry.counter("queueit_api_test_status_total", "status", String.valueOf(status)).increment();
-			sample.stop(Timer.builder("queueit_queue_duration").tag("operation", "queue").register(meterRegistry));
-			return ResponseEntity.status(status).body(msg);
-		}
-
+	// Helper method matching IntegrationConfigProvider.getJsonText()
+	private String getJsonText(String url) {
 		try {
-			String url = queueItSettings.getBaseUrl() + "/queue";
-			HttpHeaders headers = buildHeaders();
-			String body = String.format("{\"userId\":\"%s\"}", userId);
-			HttpEntity<String> entity = new HttpEntity<>(body, headers);
-			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+			URL resource = new URL(url);
+			URLConnection connection = resource.openConnection();
+			connection.setRequestProperty("api-key", API_KEY);
+			connection.setConnectTimeout(DOWNLOAD_TIMEOUT_MS);
+			connection.setReadTimeout(DOWNLOAD_TIMEOUT_MS);
 
-			// Record success metrics
-			meterRegistry.counter("queueit_api_success_total", "operation", "queue").increment();
+			BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			StringBuilder response = new StringBuilder();
+			String inputLine;
+			while ((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();
+			return response.toString();
+		}
+		catch (IOException e) {
+			throw new RuntimeException("Failed to get JSON text from URL: " + url, e);
+		}
+	}
 
-			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+	/**
+	 * Internal method to get integration configuration without HTTP response handling
+	 * Used by QueueItIntegrationFilter
+	 */
+	public String getIntegrationConfigurationInternal() {
+		try {
+			// Use the same URL pattern as IntegrationConfigProvider
+			String url = String.format("https://%s.queue-it.net/status/integrationconfig/secure/%s", CUSTOMER_ID,
+					CUSTOMER_ID);
+			System.out.println("[DEBUG] QueueIt API URL (internal config): " + url);
+			return getJsonText(url);
 		}
 		catch (Exception e) {
-			// Record error metrics
-			meterRegistry
-				.counter("queueit_api_errors_total", "operation", "queue", "error_type", e.getClass().getSimpleName())
-				.increment();
-			throw e;
-		}
-		finally {
-			sample.stop(Timer.builder("queueit_queue_duration").tag("operation", "queue").register(meterRegistry));
+			System.out.println("[DEBUG] Exception in getIntegrationConfigurationInternal: " + e.getMessage());
+			e.printStackTrace();
+			return null;
 		}
 	}
 
-	@PostMapping("/cancel")
-	@ResponseBody
-	public ResponseEntity<String> cancelQueueSession(@RequestParam String sessionId) {
-		Timer.Sample sample = Timer.start(meterRegistry);
-		meterRegistry.counter("queueit_cancel_total").increment();
-		meterRegistry.counter("queueit_api_requests_total", "operation", "cancel").increment();
-
-		try {
-			String url = queueItSettings.getBaseUrl() + "/cancel";
-			HttpHeaders headers = buildHeaders();
-			String body = String.format("{\"sessionId\":\"%s\"}", sessionId);
-			HttpEntity<String> entity = new HttpEntity<>(body, headers);
-			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-
-			// Record success metrics
-			meterRegistry.counter("queueit_api_success_total", "operation", "cancel").increment();
-
-			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		}
-		catch (Exception e) {
-			// Record error metrics
-			meterRegistry
-				.counter("queueit_api_errors_total", "operation", "cancel", "error_type", e.getClass().getSimpleName())
-				.increment();
-			throw e;
-		}
-		finally {
-			sample.stop(Timer.builder("queueit_cancel_duration").tag("operation", "cancel").register(meterRegistry));
-		}
-	}
-
-	@PostMapping("/extend-cookie")
-	@ResponseBody
-	public ResponseEntity<String> extendQueueCookie(@RequestParam String sessionId) {
-		Timer.Sample sample = Timer.start(meterRegistry);
-		meterRegistry.counter("queueit_extend_cookie_total").increment();
-		meterRegistry.counter("queueit_api_requests_total", "operation", "extend_cookie").increment();
-
-		try {
-			String url = queueItSettings.getBaseUrl() + "/extend-cookie";
-			HttpHeaders headers = buildHeaders();
-			String body = String.format("{\"sessionId\":\"%s\"}", sessionId);
-			HttpEntity<String> entity = new HttpEntity<>(body, headers);
-			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-
-			// Record success metrics
-			meterRegistry.counter("queueit_api_success_total", "operation", "extend_cookie").increment();
-
-			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		}
-		catch (Exception e) {
-			// Record error metrics
-			meterRegistry
-				.counter("queueit_api_errors_total", "operation", "extend_cookie", "error_type",
-						e.getClass().getSimpleName())
-				.increment();
-			throw e;
-		}
-		finally {
-			sample.stop(Timer.builder("queueit_extend_cookie_duration")
-				.tag("operation", "extend_cookie")
-				.register(meterRegistry));
-		}
-	}
-
-	@GetMapping("/status")
-	@ResponseBody
-	public ResponseEntity<String> getQueueStatus() {
-		Timer.Sample sample = Timer.start(meterRegistry);
-		meterRegistry.counter("queueit_status_total").increment();
-		meterRegistry.counter("queueit_api_requests_total", "operation", "status").increment();
-
-		try {
-			String url = queueItSettings.getBaseUrl() + "/status";
-			HttpHeaders headers = buildHeaders();
-			HttpEntity<Void> entity = new HttpEntity<>(headers);
-			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-
-			// Record success metrics
-			meterRegistry.counter("queueit_api_success_total", "operation", "status").increment();
-
-			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-		}
-		catch (Exception e) {
-			// Record error metrics
-			meterRegistry
-				.counter("queueit_api_errors_total", "operation", "status", "error_type", e.getClass().getSimpleName())
-				.increment();
-			throw e;
-		}
-		finally {
-			sample.stop(Timer.builder("queueit_status_duration").tag("operation", "status").register(meterRegistry));
-		}
-	}
-
+	// Health check endpoint using IntegrationConfigProvider pattern
 	@GetMapping("/health")
 	@ResponseBody
 	public ResponseEntity<String> healthCheck() {
@@ -220,17 +150,21 @@ public class QueueItIntegrationController {
 		meterRegistry.counter("queueit_api_requests_total", "operation", "health").increment();
 
 		try {
-			String url = queueItSettings.getBaseUrl() + "/health";
-			HttpHeaders headers = buildHeaders();
-			HttpEntity<Void> entity = new HttpEntity<>(headers);
-			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+			// Use the same base URL pattern as IntegrationConfigProvider
+			String url = String.format("https://%s.queue-it.net/health", CUSTOMER_ID);
+			System.out.println("[DEBUG] QueueIt API URL (health): " + url);
+
+			// Use the same HTTP connection pattern as IntegrationConfigProvider
+			String response = getJsonText(url);
 
 			// Record success metrics
 			meterRegistry.counter("queueit_api_success_total", "operation", "health").increment();
 
-			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+			return ResponseEntity.ok(response);
 		}
 		catch (Exception e) {
+			System.out.println("[DEBUG] Exception in healthCheck: " + e.getMessage());
+			e.printStackTrace();
 			// Record error metrics
 			meterRegistry
 				.counter("queueit_api_errors_total", "operation", "health", "error_type", e.getClass().getSimpleName())
@@ -242,25 +176,39 @@ public class QueueItIntegrationController {
 		}
 	}
 
-	@PostMapping("/simulate-event")
+	// Queue endpoint using IntegrationConfigProvider pattern
+	@GetMapping("/queue")
 	@ResponseBody
-	public ResponseEntity<String> simulateEvent() {
-		meterRegistry.counter("queueit_simulate_event_total").increment();
-		return ResponseEntity.status(501).body("Not Implemented");
-	}
+	public ResponseEntity<String> getQueueStatus() {
+		Timer.Sample sample = Timer.start(meterRegistry);
+		meterRegistry.counter("queueit_queue_total").increment();
+		meterRegistry.counter("queueit_api_requests_total", "operation", "queue").increment();
 
-	@GetMapping("/session-info")
-	@ResponseBody
-	public ResponseEntity<String> inspectSessionInfo() {
-		meterRegistry.counter("queueit_session_info_total").increment();
-		return ResponseEntity.status(501).body("Not Implemented");
-	}
+		try {
+			// Use the same base URL pattern as IntegrationConfigProvider
+			String url = String.format("https://%s.queue-it.net/status/queue", CUSTOMER_ID);
+			System.out.println("[DEBUG] QueueIt API URL (queue): " + url);
 
-	@PostMapping("/reset-test-state")
-	@ResponseBody
-	public ResponseEntity<String> resetTestState() {
-		meterRegistry.counter("queueit_reset_test_state_total").increment();
-		return ResponseEntity.status(501).body("Not Implemented");
+			// Use the same HTTP connection pattern as IntegrationConfigProvider
+			String response = getJsonText(url);
+
+			// Record success metrics
+			meterRegistry.counter("queueit_api_success_total", "operation", "queue").increment();
+
+			return ResponseEntity.ok(response);
+		}
+		catch (Exception e) {
+			System.out.println("[DEBUG] Exception in getQueueStatus: " + e.getMessage());
+			e.printStackTrace();
+			// Record error metrics
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "queue", "error_type", e.getClass().getSimpleName())
+				.increment();
+			throw e;
+		}
+		finally {
+			sample.stop(Timer.builder("queueit_queue_duration").tag("operation", "queue").register(meterRegistry));
+		}
 	}
 
 }
