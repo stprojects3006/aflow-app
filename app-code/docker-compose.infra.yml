@@ -92,4 +92,4 @@ volumes:
 
 networks:
   petclinic-net:
-    driver: bridge 
+    external: true 

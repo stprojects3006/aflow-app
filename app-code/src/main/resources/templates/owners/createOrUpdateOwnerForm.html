@@ -20,6 +20,28 @@
       </div>
     </div>
   </form>
+
+  <div th:if="${showOverlay}">
+    <!-- Overlay Modal -->
+    <div class="modal fade show" id="queueOverlay" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);" aria-modal="true" role="dialog">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Queue-it Overlay</h5>
+          </div>
+          <div class="modal-body">
+            <p>You have cleared the queue and can now add a new owner. This is a simulated overlay.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('queueOverlay').style.display='none'">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Optionally, focus the modal or add more logic here
+    </script>
+  </div>
 </body>
 
 </html>

@@ -7,7 +7,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
@@ -209,6 +212,263 @@ public class QueueItIntegrationController {
 		finally {
 			sample.stop(Timer.builder("queueit_queue_duration").tag("operation", "queue").register(meterRegistry));
 		}
+	}
+
+	// UI form renderers for integration test cases (except /queue)
+	@GetMapping("/validate")
+	public String showValidatePage() {
+		return "integration/queueit/validate";
+	}
+
+	@GetMapping("/cancel")
+	public String showCancelPage() {
+		return "integration/queueit/cancel";
+	}
+
+	@GetMapping("/extend-cookie")
+	public String showExtendCookiePage() {
+		return "integration/queueit/extend-cookie";
+	}
+
+	@GetMapping("/status")
+	public String showStatusPage() {
+		return "integration/queueit/status";
+	}
+
+	@GetMapping("/health-ui")
+	public String showHealthPage() {
+		return "integration/queueit/health";
+	}
+
+	@GetMapping("/session-info")
+	public String showSessionInfoPage() {
+		return "integration/queueit/session-info";
+	}
+
+	@GetMapping("/reset-test-state")
+	public String showResetTestStatePage() {
+		return "integration/queueit/reset-test-state";
+	}
+
+	@GetMapping("/run-junit")
+	public String showRunJunitPage() {
+		return "integration/queueit/run-junit";
+	}
+
+	@GetMapping("/simulate-event")
+	public String showSimulateEventPage() {
+		return "integration/queueit/simulate-event";
+	}
+
+	// POST handlers for form submissions (call actual Queue-it APIs)
+	@PostMapping("/validate")
+	public String handleValidate(@RequestParam("token") String token, Model model) {
+		String body = "{\"token\":\"" + token + "\"}";
+		ResponseEntity<String> response = validateQueueToken(body);
+		model.addAttribute("response", response.getBody());
+		return "integration/queueit/validate";
+	}
+
+	@PostMapping("/cancel")
+	public String handleCancel(@RequestParam("sessionId") String sessionId, Model model) {
+		String body = "{\"sessionId\":\"" + sessionId + "\"}";
+		ResponseEntity<String> response = cancelQueueSession(body);
+		model.addAttribute("response", response.getBody());
+		return "integration/queueit/cancel";
+	}
+
+	@PostMapping("/extend-cookie")
+	public String handleExtendCookie(@RequestParam("sessionId") String sessionId, Model model) {
+		String body = "{\"sessionId\":\"" + sessionId + "\"}";
+		ResponseEntity<String> response = extendQueueCookie(body);
+		model.addAttribute("response", response.getBody());
+		return "integration/queueit/extend-cookie";
+	}
+
+	@PostMapping("/status")
+	public String handleStatus(Model model) {
+		ResponseEntity<String> response = getQueueStatusStub();
+		model.addAttribute("response", response.getBody());
+		return "integration/queueit/status";
+	}
+
+	@PostMapping("/health")
+	public String handleHealth(Model model) {
+		ResponseEntity<String> response = healthCheck();
+		model.addAttribute("response", response.getBody());
+		return "integration/queueit/health";
+	}
+
+	@PostMapping("/reset-test-state")
+	public String handleResetTestState(Model model) {
+		ResponseEntity<String> response = resetTestState();
+		model.addAttribute("response", response.getBody());
+		return "integration/queueit/reset-test-state";
+	}
+
+	@PostMapping("/run-junit")
+	public String handleRunJunit(Model model) {
+		ResponseEntity<String> response = runJunit();
+		model.addAttribute("response", response.getBody());
+		return "integration/queueit/run-junit";
+	}
+
+	@PostMapping("/session-info")
+	public String handleSessionInfo(Model model) {
+		model.addAttribute("response", "{\"error\":\"Queue-it endpoint not implemented\"}");
+		return "integration/queueit/session-info";
+	}
+
+	@PostMapping("/simulate-event")
+	public String handleSimulateEvent(Model model) {
+		model.addAttribute("response", "{\"error\":\"Queue-it endpoint not implemented\"}");
+		return "integration/queueit/simulate-event";
+	}
+
+	@PostMapping("/queue")
+	public String handleQueue(@RequestParam("userId") String userId, Model model) {
+		// Simulate queueing a user (call Queue-it API or stub)
+		String body = "{\"userId\":\"" + userId + "\"}";
+		String responseText;
+		boolean success = false;
+		try {
+			String url = queueItSettings.getBaseUrl() + "/queue";
+			HttpHeaders headers = buildHeaders();
+			headers.set("customer-id", queueItSettings.getCustomerId());
+			headers.set("secret-key", queueItSettings.getSecretKey());
+			headers.set("Content-Type", "application/json");
+			HttpEntity<String> entity = new HttpEntity<>(body, headers);
+			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+			responseText = response.getBody();
+			success = response.getStatusCode().is2xxSuccessful();
+		}
+		catch (Exception e) {
+			responseText = "{\"error\":\"Queue-it API error: " + e.getMessage() + "\"}";
+		}
+		model.addAttribute("response", responseText);
+		model.addAttribute("showOverlay", success); // Show overlay only if queueing
+													// succeeded
+		return "integration/queueit/queue";
+	}
+
+	// Internal API methods for form POST handlers
+	public ResponseEntity<String> validateQueueToken(String body) {
+		Timer.Sample sample = Timer.start(meterRegistry);
+		meterRegistry.counter("queueit_validate_total").increment();
+		meterRegistry.counter("queueit_api_requests_total", "operation", "validate").increment();
+		try {
+			String url = queueItSettings.getBaseUrl() + "/validate";
+			HttpHeaders headers = buildHeaders();
+			headers.set("customer-id", queueItSettings.getCustomerId());
+			headers.set("secret-key", queueItSettings.getSecretKey());
+			headers.set("Content-Type", "application/json");
+			HttpEntity<String> entity = new HttpEntity<>(body, headers);
+			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+			meterRegistry.counter("queueit_api_success_total", "operation", "validate").increment();
+			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+		}
+		catch (Exception e) {
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "validate", "error_type",
+						e.getClass().getSimpleName())
+				.increment();
+			return ResponseEntity.status(502).body("{\"error\":\"Queue-it API error: " + e.getMessage() + "\"}");
+		}
+		finally {
+			sample
+				.stop(Timer.builder("queueit_validate_duration").tag("operation", "validate").register(meterRegistry));
+		}
+	}
+
+	public ResponseEntity<String> cancelQueueSession(String body) {
+		Timer.Sample sample = Timer.start(meterRegistry);
+		meterRegistry.counter("queueit_cancel_total").increment();
+		meterRegistry.counter("queueit_api_requests_total", "operation", "cancel").increment();
+		try {
+			String url = queueItSettings.getBaseUrl() + "/cancel";
+			HttpHeaders headers = buildHeaders();
+			headers.set("customer-id", queueItSettings.getCustomerId());
+			headers.set("secret-key", queueItSettings.getSecretKey());
+			headers.set("Content-Type", "application/json");
+			HttpEntity<String> entity = new HttpEntity<>(body, headers);
+			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+			meterRegistry.counter("queueit_api_success_total", "operation", "cancel").increment();
+			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+		}
+		catch (Exception e) {
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "cancel", "error_type", e.getClass().getSimpleName())
+				.increment();
+			return ResponseEntity.status(502).body("{\"error\":\"Queue-it API error: " + e.getMessage() + "\"}");
+		}
+		finally {
+			sample.stop(Timer.builder("queueit_cancel_duration").tag("operation", "cancel").register(meterRegistry));
+		}
+	}
+
+	public ResponseEntity<String> extendQueueCookie(String body) {
+		Timer.Sample sample = Timer.start(meterRegistry);
+		meterRegistry.counter("queueit_extend_cookie_total").increment();
+		meterRegistry.counter("queueit_api_requests_total", "operation", "extend-cookie").increment();
+		try {
+			String url = queueItSettings.getBaseUrl() + "/extend-cookie";
+			HttpHeaders headers = buildHeaders();
+			headers.set("customer-id", queueItSettings.getCustomerId());
+			headers.set("secret-key", queueItSettings.getSecretKey());
+			headers.set("Content-Type", "application/json");
+			HttpEntity<String> entity = new HttpEntity<>(body, headers);
+			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+			meterRegistry.counter("queueit_api_success_total", "operation", "extend-cookie").increment();
+			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+		}
+		catch (Exception e) {
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "extend-cookie", "error_type",
+						e.getClass().getSimpleName())
+				.increment();
+			return ResponseEntity.status(502).body("{\"error\":\"Queue-it API error: " + e.getMessage() + "\"}");
+		}
+		finally {
+			sample.stop(Timer.builder("queueit_extend_cookie_duration")
+				.tag("operation", "extend-cookie")
+				.register(meterRegistry));
+		}
+	}
+
+	public ResponseEntity<String> getQueueStatusStub() {
+		Timer.Sample sample = Timer.start(meterRegistry);
+		meterRegistry.counter("queueit_status_total").increment();
+		meterRegistry.counter("queueit_api_requests_total", "operation", "status").increment();
+		try {
+			String url = queueItSettings.getBaseUrl() + "/status";
+			HttpHeaders headers = buildHeaders();
+			headers.set("customer-id", queueItSettings.getCustomerId());
+			headers.set("secret-key", queueItSettings.getSecretKey());
+			headers.set("Content-Type", "application/json");
+			HttpEntity<String> entity = new HttpEntity<>(headers);
+			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+			meterRegistry.counter("queueit_api_success_total", "operation", "status").increment();
+			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+		}
+		catch (Exception e) {
+			meterRegistry
+				.counter("queueit_api_errors_total", "operation", "status", "error_type", e.getClass().getSimpleName())
+				.increment();
+			return ResponseEntity.status(502).body("{\"error\":\"Queue-it API error: " + e.getMessage() + "\"}");
+		}
+		finally {
+			sample.stop(Timer.builder("queueit_status_duration").tag("operation", "status").register(meterRegistry));
+		}
+	}
+
+	public ResponseEntity<String> resetTestState() {
+		meterRegistry.counter("queueit_reset_test_state_total").increment();
+		return ResponseEntity.status(501).body("{\"error\":\"Queue-it endpoint not implemented\"}");
+	}
+
+	public ResponseEntity<String> runJunit() {
+		meterRegistry.counter("queueit_run_junit_total").increment();
+		return ResponseEntity.ok("{\"result\":\"JUnit tests run (stub)\"}");
 	}
 
 }

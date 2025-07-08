@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.samples.petclinic.integration.QueueItSettings;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -85,6 +86,8 @@ public class QueueItIntegrationFilter implements Filter {
 
 	private boolean doValidation(HttpServletRequest request, HttpServletResponse response) {
 		try {
+			logger.debug("[QueueItFilter] Incoming requestURI: {}", request.getRequestURI());
+
 			// Skip validation for integration endpoints to avoid infinite loops
 			String requestURI = request.getRequestURI();
 			if (requestURI.startsWith("/integration/queueit") || requestURI.startsWith("/actuator")
@@ -93,9 +96,9 @@ public class QueueItIntegrationFilter implements Filter {
 				return true;
 			}
 
-			// Skip validation for public routes that don't need queue protection
+			// Remove or bypass isPublicRoute logic so all other routes are protected
 			if (isPublicRoute(requestURI)) {
-				logger.debug("Skipping validation for public route: {}", requestURI);
+				logger.debug("[QueueItFilter] Public route, skipping validation: {}", requestURI);
 				return true;
 			}
 
@@ -159,6 +162,12 @@ public class QueueItIntegrationFilter implements Filter {
 					return false;
 				}
 				// Otherwise, let the request proceed
+				// If this is /owners/new and user just cleared the queue, set overlay
+				// flag
+				if (requestURI.equals("/owners/new")) {
+					HttpSession session = request.getSession();
+					session.setAttribute("showOverlay", true);
+				}
 			}
 		}
 		catch (Exception ex) {
@@ -253,10 +262,19 @@ public class QueueItIntegrationFilter implements Filter {
 	}
 
 	private String getPureUrl(HttpServletRequest request) {
-		Pattern pattern = Pattern.compile("([\\?&])(" + QUEUEIT_TOKEN_KEY + "=[^&]*)", Pattern.CASE_INSENSITIVE);
+		String scheme = request.getScheme();
+		String hostHeader = request.getHeader("Host");
+		String uri = request.getRequestURI();
 		String queryString = request.getQueryString();
-		String url = request.getRequestURL().toString() + (queryString != null ? ("?" + queryString) : "");
-		String pureUrl = pattern.matcher(url).replaceAll("");
+
+		StringBuilder url = new StringBuilder();
+		url.append(scheme).append("://").append(hostHeader).append(uri);
+		if (queryString != null && !queryString.isEmpty()) {
+			url.append("?").append(queryString);
+		}
+		// Remove queueittoken param if present (existing logic)
+		Pattern pattern = Pattern.compile("([\\?&])(" + QUEUEIT_TOKEN_KEY + "=[^&]*)", Pattern.CASE_INSENSITIVE);
+		String pureUrl = pattern.matcher(url.toString()).replaceAll("");
 		return pureUrl;
 	}
 

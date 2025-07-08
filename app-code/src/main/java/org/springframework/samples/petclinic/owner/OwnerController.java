@@ -35,6 +35,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.validation.Valid;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * @author Juergen Hoeller
@@ -68,7 +69,13 @@ class OwnerController {
 	}
 
 	@GetMapping("/owners/new")
-	public String initCreationForm() {
+	public String initCreationForm(Model model, HttpSession session) {
+		// Check for overlay flag in session (set by filter after queue clearance)
+		Boolean showOverlay = (Boolean) session.getAttribute("showOverlay");
+		if (showOverlay != null && showOverlay) {
+			model.addAttribute("showOverlay", true);
+			session.removeAttribute("showOverlay"); // Show only once
+		}
 		return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 	}
 
