@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  * Queue-it Integration Filter that provides full queue management capabilities Similar to
  * qFilter but integrated with QueueItIntegrationController pattern
  */
-@WebFilter("/*")
+// @WebFilter("/*")  // Disabled to prevent QueueIt redirects
 public class QueueItIntegrationFilter implements Filter {
 
 	private static final Logger logger = LoggerFactory.getLogger(QueueItIntegrationFilter.class);

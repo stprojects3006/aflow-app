@@ -59,7 +59,7 @@ services:
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
       - '--web.route-prefix=/graph'
-      - '--web.external-url=https://affluenceit.com/graph/'
+      - '--web.external-url=https://affluenceit.com/prometheus/'
     networks:
       - petclinic-net
 
