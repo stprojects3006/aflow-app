@@ -29,10 +29,6 @@
             "legendFormat": "/health - 404 Not Found"
           },
           {
-            "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/health\",status=\"500\"}[5m])",
-            "legendFormat": "/health - 500 Internal Server Error"
-          },
-          {
             "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/health\",status=\"502\"}[5m])",
             "legendFormat": "/health - 502 Bad Gateway"
           },
@@ -101,6 +97,94 @@
       },
       {
         "id": 2,
+        "title": "QueueIt Status Codes - 302 Redirects, 304, 200 OK",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/owners/.*\",status=\"302\"}[5m])",
+            "legendFormat": "302 Redirects (QueueIt) - /owners/*"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"302\"}[5m])",
+            "legendFormat": "302 Redirects (QueueIt) - /integration/queueit/*"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/owners/.*\",status=\"200\"}[5m])",
+            "legendFormat": "200 OK - /owners/*"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"200\"}[5m])",
+            "legendFormat": "200 OK - /integration/queueit/*"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/owners/.*\",status=\"304\"}[5m])",
+            "legendFormat": "304 Not Modified - /owners/*"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"304\"}[5m])",
+            "legendFormat": "304 Not Modified - /integration/queueit/*"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "blue",
+                  "value": 0.1
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 3,
         "title": "Total Errors by Status Code",
         "type": "stat",
         "targets": [
@@ -121,8 +205,8 @@
             "legendFormat": "404 Not Found"
           },
           {
-            "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"})",
-            "legendFormat": "500 Internal Server Error"
+            "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"} and uri!=\"/integration/queueit/health\")",
+            "legendFormat": "500 Internal Server Error (excl. health)"
           },
           {
             "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"502\"})",
@@ -168,7 +252,67 @@
         }
       },
       {
-        "id": 3,
+        "id": 4,
+        "title": "QueueIt Status Code Summary",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(http_server_requests_seconds_count{uri=~\"/owners/.*\",status=\"302\"})",
+            "legendFormat": "302 Redirects (QueueIt) - Total"
+          },
+          {
+            "expr": "sum(http_server_requests_seconds_count{uri=~\"/owners/.*\",status=\"200\"})",
+            "legendFormat": "200 OK - Total"
+          },
+          {
+            "expr": "sum(http_server_requests_seconds_count{uri=~\"/owners/.*\",status=\"304\"})",
+            "legendFormat": "304 Not Modified - Total"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/owners/.*\",status=\"302\"}[5m])",
+            "legendFormat": "302 Redirects/sec"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/owners/.*\",status=\"200\"}[5m])",
+            "legendFormat": "200 OK/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "blue",
+                  "value": 1
+                },
+                {
+                  "color": "yellow",
+                  "value": 10
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
         "title": "Error Percentage by Status Code",
         "type": "timeseries",
         "targets": [
@@ -189,8 +333,8 @@
             "legendFormat": "404 Not Found %"
           },
           {
-            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
-            "legendFormat": "500 Internal Server Error %"
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"} and uri!=\"/integration/queueit/health\"[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "500 Internal Server Error % (excl. health)"
           },
           {
             "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"502\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
@@ -260,11 +404,11 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 8
+          "y": 16
         }
       },
       {
-        "id": 4,
+        "id": 6,
         "title": "Response Time by Error Status",
         "type": "timeseries",
         "targets": [
@@ -277,8 +421,8 @@
             "legendFormat": "404 Not Found Response Time"
           },
           {
-            "expr": "rate(http_server_requests_seconds_sum{uri=~\"/integration/queueit/.*\",status=\"500\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"}[5m])",
-            "legendFormat": "500 Internal Server Error Response Time"
+            "expr": "rate(http_server_requests_seconds_sum{uri=~\"/integration/queueit/.*\",status=\"500\"} and uri!=\"/integration/queueit/health\"[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"} and uri!=\"/integration/queueit/health\"[5m])",
+            "legendFormat": "500 Internal Server Error Response Time (excl. health)"
           },
           {
             "expr": "rate(http_server_requests_seconds_sum{uri=~\"/integration/queueit/.*\",status=\"502\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"502\"}[5m])",
@@ -344,11 +488,11 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 8
+          "y": 16
         }
       },
       {
-        "id": 5,
+        "id": 7,
         "title": "Exception Types by Error Status",
         "type": "timeseries",
         "targets": [
@@ -416,11 +560,11 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 16
+          "y": 24
         }
       },
       {
-        "id": 6,
+        "id": 8,
         "title": "Overall Error Summary",
         "type": "stat",
         "targets": [
@@ -468,11 +612,11 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 16
+          "y": 24
         }
       },
       {
-        "id": 7,
+        "id": 9,
         "title": "Top Error Sources by IP",
         "type": "table",
         "targets": [
@@ -510,13 +654,13 @@
         },
         "gridPos": {
           "h": 8,
-          "w": 12,
+          "w": 24,
           "x": 0,
-          "y": 24
+          "y": 32
         }
       },
       {
-        "id": 8,
+        "id": 10,
         "title": "Error Rate by IP Region",
         "type": "timeseries",
         "targets": [
@@ -612,11 +756,11 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 24
+          "y": 32
         }
       },
       {
-        "id": 9,
+        "id": 11,
         "title": "Unique IPs with Errors",
         "type": "stat",
         "targets": [
@@ -656,11 +800,11 @@
           "h": 8,
           "w": 8,
           "x": 0,
-          "y": 32
+          "y": 40
         }
       },
       {
-        "id": 10,
+        "id": 12,
         "title": "Error Rate by IP and Status Code",
         "type": "timeseries",
         "targets": [
@@ -736,7 +880,7 @@
           "h": 8,
           "w": 16,
           "x": 8,
-          "y": 32
+          "y": 40
         }
       }
     ],

@@ -28,10 +28,7 @@
             "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/health\",status=\"404\"}[5m])",
             "legendFormat": "/health - 404 Not Found"
           },
-          {
-            "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/health\",status=\"500\"}[5m])",
-            "legendFormat": "/health - 500 Internal Server Error"
-          },
+
           {
             "expr": "rate(http_server_requests_seconds_count{uri=\"/integration/queueit/health\",status=\"502\"}[5m])",
             "legendFormat": "/health - 502 Bad Gateway"
@@ -121,8 +118,8 @@
             "legendFormat": "404 Not Found"
           },
           {
-            "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"})",
-            "legendFormat": "500 Internal Server Error"
+            "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"} and uri!=\"/integration/queueit/health\")",
+            "legendFormat": "500 Internal Server Error (excl. health)"
           },
           {
             "expr": "sum(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"502\"})",
@@ -189,8 +186,8 @@
             "legendFormat": "404 Not Found %"
           },
           {
-            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
-            "legendFormat": "500 Internal Server Error %"
+            "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"500\"} and uri!=\"/integration/queueit/health\"[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",
+            "legendFormat": "500 Internal Server Error % (excl. health)"
           },
           {
             "expr": "(rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\",status=\"502\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/integration/queueit/.*\"}[5m])) * 100",

@@ -178,6 +178,7 @@ public class QueueItIntegrationController {
 			sample.stop(Timer.builder("queueit_health_duration").tag("operation", "health").register(meterRegistry));
 		}
 	}
+	*/
 
 	// Queue endpoint using IntegrationConfigProvider pattern
 	@GetMapping("/queue")

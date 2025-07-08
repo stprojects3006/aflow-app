@@ -849,6 +849,51 @@
           "y": 40
         },
         "datasource": { "type": "prometheus", "uid": "prometheus" }
+      },
+      {
+        "id": 13,
+        "title": "QueueIt Status Codes by Client IP",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "sum by (client_ip, status) (rate(http_server_requests_seconds_count{uri=~\"/owners/.*|/integration/queueit/.*\"}[5m]))",
+            "legendFormat": "{{client_ip}} - {{status}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 0.1
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 48
+        },
+        "datasource": { "type": "prometheus", "uid": "prometheus" }
       }
     ],
     "time": {

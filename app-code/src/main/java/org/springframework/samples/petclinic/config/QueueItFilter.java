@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-@Component
-// @WebFilter("/*")  // Disabled to prevent QueueIt redirects
+//@Component
+@WebFilter("/*")  // Disabled to prevent QueueIt redirects
 public class QueueItFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(QueueItFilter.class);
