@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue-it Integration Technical Architecture</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 1rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .section h2 {
+            color: #1e3c72;
+            margin-top: 0;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+        }
+        
+        .section h3 {
+            color: #495057;
+            margin-top: 1.5rem;
+            font-size: 1.4rem;
+        }
+        
+        .diagram-container {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .mermaid {
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+        
+        .flow-step {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .flow-step h4 {
+            color: #007bff;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .tech-details {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .endpoint-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .endpoint-table th {
+            background: #007bff;
+            color: white;
+            padding: 1rem;
+            text-align: left;
+        }
+        
+        .endpoint-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .endpoint-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-success { background: #d4edda; color: #155724; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        
+        ul {
+            padding-left: 1.5rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .arch-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .arch-card h4 {
+            color: #007bff;
+            margin-top: 0;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 1rem;
+            }
+            
+            .architecture-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Queue-it Integration Technical Architecture</h1>
+            <p>Comprehensive Technical Documentation with Flow Diagrams and Integration Details</p>
+        </div>
+        
+        <div class="content">
+            <!-- Overview Section -->
+            <div class="section">
+                <h2>🏗️ System Overview</h2>
+                <p>
+                    This document provides a comprehensive technical architecture overview of the Queue-it integration 
+                    within the Spring PetClinic application, deployed on AWS EC2. The integration enables virtual 
+                    queuing capabilities with real-time monitoring and load testing support.
+                </p>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>🎯 Core Components</h4>
+                        <ul>
+                            <li><strong>Nginx:</strong> SSL termination & reverse proxy</li>
+                            <li><strong>Spring PetClinic:</strong> Main application with Queue-it integration</li>
+                            <li><strong>Queue-it Cloud:</strong> Virtual queuing service</li>
+                            <li><strong>Monitoring Stack:</strong> Prometheus + Grafana</li>
+                        </ul>
+                    </div>
+                    <div class="arch-card">
+                        <h4>🔧 Integration Features</h4>
+                        <ul>
+                            <li><strong>Token Validation:</strong> Real-time queue token verification</li>
+                            <li><strong>Queue Management:</strong> User queuing and session handling</li>
+                            <li><strong>Health Monitoring:</strong> Endpoint health checks</li>
+                            <li><strong>Metrics Collection:</strong> Comprehensive observability</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- High-Level Architecture -->
+            <div class="section">
+                <h2>📊 High-Level Architecture</h2>
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        graph TB
+                            subgraph "Client Layer"
+                                User[👤 User Browser]
+                                LoadTester[🧪 k6 Load Tester]
+                            end
+                            
+                            subgraph "Infrastructure Layer"
+                                Nginx[🌐 Nginx Reverse Proxy]
+                                SSL[🔒 SSL Termination]
+                            end
+                            
+                            subgraph "Application Layer"
+                                PetClinic[🏥 Spring PetClinic]
+                                QueueItController[🎛️ QueueIt Controller]
+                                QueueItSettings[⚙️ QueueIt Settings]
+                            end
+                            
+                            subgraph "External Services"
+                                QueueItCloud[☁️ Queue-it Cloud Service]
+                            end
+                            
+                            subgraph "Monitoring Layer"
+                                Prometheus[📈 Prometheus]
+                                Grafana[📊 Grafana Dashboards]
+                                CloudWatch[☁️ AWS CloudWatch]
+                            end
+                            
+                            User --> Nginx
+                            LoadTester --> Nginx
+                            Nginx --> SSL
+                            SSL --> PetClinic
+                            PetClinic --> QueueItController
+                            QueueItController --> QueueItSettings
+                            QueueItController --> QueueItCloud
+                            PetClinic --> Prometheus
+                            Prometheus --> Grafana
+                            PetClinic --> CloudWatch
+                            
+                            style User fill:#e1f5fe
+                            style LoadTester fill:#fff3e0
+                            style Nginx fill:#f3e5f5
+                            style PetClinic fill:#e8f5e8
+                            style QueueItController fill:#fff8e1
+                            style QueueItCloud fill:#fce4ec
+                            style Prometheus fill:#e0f2f1
+                            style Grafana fill:#f1f8e9
+                    </div>
+                </div>
+            </div>
+
+            <!-- Request Flow -->
+            <div class="section">
+                <h2>🔄 Request Flow Architecture</h2>
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        sequenceDiagram
+                            participant U as 👤 User
+                            participant N as 🌐 Nginx
+                            participant P as 🏥 PetClinic
+                            participant Q as ☁️ Queue-it
+                            participant M as 📈 Metrics
+                            
+                            U->>N: HTTP/HTTPS Request
+                            N->>N: SSL Termination
+                            N->>P: Proxy to PetClinic:8080
+                            P->>P: Route to QueueIt Controller
+                            P->>Q: API Call (validate/queue/status)
+                            Q-->>P: Response (queue/allow/error)
+                            P->>M: Record Metrics
+                            P-->>N: HTTP Response
+                            N-->>U: HTTP Response
+                            
+                            Note over P,M: Metrics include:<br/>- Request count<br/>- Response time<br/>- Error rates<br/>- Status codes
+                    </div>
+                </div>
+                
+                <div class="tech-details">
+                    <h4>🔍 Technical Details:</h4>
+                    <ul>
+                        <li><strong>SSL Termination:</strong> Nginx handles SSL certificates (Let's Encrypt)</li>
+                        <li><strong>Proxy Headers:</strong> X-Real-IP, X-Forwarded-For, X-Forwarded-Proto</li>
+                        <li><strong>Timeout Configuration:</strong> 60s connect, send, and read timeouts</li>
+                        <li><strong>Health Checks:</strong> /health endpoint for load balancer</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Integration Endpoints -->
+            <div class="section">
+                <h2>🎯 Integration Endpoints & Logic</h2>
+                
+                <table class="endpoint-table">
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Purpose</th>
+                            <th>Queue-it API</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/integration/queueit/validate</code></td>
+                            <td>POST</td>
+                            <td>Validate queue token</td>
+                            <td>POST /validate</td>
+                            <td><span class="status-badge status-success">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/integration/queueit/queue</code></td>
+                            <td>POST</td>
+                            <td>Simulate user queuing</td>
+                            <td>POST /queue</td>
+                            <td><span class="status-badge status-success">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/integration/queueit/cancel</code></td>
+                            <td>POST</td>
+                            <td>Cancel queue session</td>
+                            <td>POST /cancel</td>
+                            <td><span class="status-badge status-success">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/integration/queueit/extend-cookie</code></td>
+                            <td>POST</td>
+                            <td>Extend session cookie</td>
+                            <td>POST /extend-cookie</td>
+                            <td><span class="status-badge status-success">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/integration/queueit/status</code></td>
+                            <td>GET</td>
+                            <td>Get queue status</td>
+                            <td>GET /status</td>
+                            <td><span class="status-badge status-success">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/integration/queueit/health</code></td>
+                            <td>GET</td>
+                            <td>Health check</td>
+                            <td>GET /health</td>
+                            <td><span class="status-badge status-success">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/integration/queueit/config</code></td>
+                            <td>GET</td>
+                            <td>Get integration config</td>
+                            <td>GET /status/integrationconfig</td>
+                            <td><span class="status-badge status-success">Active</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Detailed Token Validation Flow -->
+            <div class="section">
+                <h2>🔐 Detailed Token Validation Flow</h2>
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        sequenceDiagram
+                            participant U as 👤 User
+                            participant N as 🌐 Nginx
+                            participant C as 🎛️ Controller
+                            participant S as ⚙️ Settings
+                            participant Q as ☁️ Queue-it
+                            participant M as 📊 Metrics
+                            
+                            U->>N: POST /integration/queueit/validate
+                            Note over U,N: Form data: token=abc123
+                            
+                            N->>C: Proxy request
+                            C->>S: Get API credentials
+                            S-->>C: Customer ID, API Key, Secret Key
+                            
+                            C->>C: Build HTTP headers
+                            Note over C: Headers:<br/>- api-key: 4607e3f0-...<br/>- customer-id: futuraforge<br/>- secret-key: 62cc5b6d-...<br/>- Content-Type: application/json
+                            
+                            C->>Q: POST https://futuraforge.queue-it.net/validate
+                            Note over C,Q: Body: {"token":"abc123"}
+                            
+                            alt Success
+                                Q-->>C: 200 OK - {"valid":true}
+                                C->>M: Increment success counter
+                            else Error
+                                Q-->>C: 400/401/403 - Error response
+                                C->>M: Increment error counter
+                            end
+                            
+                            C->>M: Record response time
+                            C-->>N: HTTP response with result
+                            N-->>U: Display result in UI
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <h4>🔧 Implementation Details:</h4>
+                    <div class="code-block">
+// QueueItIntegrationController.java - validateQueueToken method
+public ResponseEntity&lt;String&gt; validateQueueToken(String body) {
+    Timer.Sample sample = Timer.start(meterRegistry);
+    meterRegistry.counter("queueit_validate_total").increment();
+    
+    try {
+        String url = queueItSettings.getBaseUrl() + "/validate";
+        HttpHeaders headers = buildHeaders();
+        headers.set("customer-id", queueItSettings.getCustomerId());
+        headers.set("secret-key", queueItSettings.getSecretKey());
+        headers.set("Content-Type", "application/json");
+        
+        HttpEntity&lt;String&gt; entity = new HttpEntity&lt;&gt;(body, headers);
+        ResponseEntity&lt;String&gt; response = restTemplate.postForEntity(url, entity, String.class);
+        
+        meterRegistry.counter("queueit_api_success_total", "operation", "validate").increment();
+        return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+    } catch (Exception e) {
+        meterRegistry.counter("queueit_api_errors_total", "operation", "validate").increment();
+        return ResponseEntity.status(502).body("{\"error\":\"Queue-it API error: " + e.getMessage() + "\"}");
+    } finally {
+        sample.stop(Timer.builder("queueit_validate_duration").register(meterRegistry));
+    }
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Management -->
+            <div class="section">
+                <h2>⚙️ Configuration Management</h2>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>🔑 QueueItSettings.java</h4>
+                        <div class="code-block">
+@Component
+public class QueueItSettings {
+    private static final String CUSTOMER_ID = "futuraforge";
+    private static final String SECRET_KEY = "62cc5b6d-cad7-44c5-88a2-34fa78f73b767c7dcee7-5e81-44c4-93ea-0990c14f3176";
+    private static final String API_KEY = "4607e3f0-dcb2-4714-9570-45d7e662c45f";
+    
+    public String getBaseUrl() {
+        return String.format("https://%s.queue-it.net", CUSTOMER_ID);
+    }
+    
+    public String getConfigUrl() {
+        return String.format("https://%s.queue-it.net/status/integrationconfig/secure/%s", 
+                           CUSTOMER_ID, CUSTOMER_ID);
+    }
+}
+                        </div>
+                    </div>
+                    
+                    <div class="arch-card">
+                        <h4>🌐 Nginx Configuration</h4>
+                        <div class="code-block">
+# nginx-aws.conf
+server {
+    listen 443 ssl;
+    server_name affluenceit.com www.affluenceit.com;
+    
+    # SSL Certificates (Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/affluenceit.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/affluenceit.com/privkey.pem;
+    
+    # Main PetClinic Application
+    location / {
+        proxy_pass http://petclinic:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tech-details">
+                    <h4>🔒 Security Considerations:</h4>
+                    <ul>
+                        <li><strong>Credential Management:</strong> API keys and secrets are currently hardcoded (should be externalized)</li>
+                        <li><strong>SSL/TLS:</strong> All production traffic uses HTTPS with Let's Encrypt certificates</li>
+                        <li><strong>Network Security:</strong> AWS security groups control access to EC2 instances</li>
+                        <li><strong>Request Validation:</strong> All inputs are validated before API calls</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Monitoring & Observability -->
+            <div class="section">
+                <h2>📊 Monitoring & Observability</h2>
+                
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        graph LR
+                            subgraph "Application Layer"
+                                P[🏥 PetClinic App]
+                                M[MeterRegistry]
+                            end
+                            
+                            subgraph "Metrics Pipeline"
+                                Prom[📈 Prometheus]
+                                Graf[📊 Grafana]
+                            end
+                            
+                            subgraph "Logging"
+                                CW[☁️ CloudWatch]
+                            end
+                            
+                            P --> M
+                            M --> Prom
+                            Prom --> Graf
+                            P --> CW
+                            
+                            style P fill:#e8f5e8
+                            style M fill:#fff8e1
+                            style Prom fill:#e0f2f1
+                            style Graf fill:#f1f8e9
+                            style CW fill:#fce4ec
+                    </div>
+                </div>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>📈 Metrics Collected</h4>
+                        <ul>
+                            <li><strong>Request Counters:</strong> queueit_validate_total, queueit_queue_total</li>
+                            <li><strong>Error Counters:</strong> queueit_api_errors_total by operation and error type</li>
+                            <li><strong>Success Counters:</strong> queueit_api_success_total by operation</li>
+                            <li><strong>Response Times:</strong> queueit_validate_duration, queueit_queue_duration</li>
+                            <li><strong>HTTP Metrics:</strong> Status codes, methods, URIs</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-card">
+                        <h4>📊 Grafana Dashboards</h4>
+                        <ul>
+                            <li><strong>QueueIt Integration Dashboard:</strong> Overall integration health</li>
+                            <li><strong>Request Volume Dashboard:</strong> Traffic patterns and IP diversity</li>
+                            <li><strong>Error Tracking Dashboard:</strong> Error rates and troubleshooting</li>
+                            <li><strong>HTTP Traffic Dashboard:</strong> General application metrics</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="code-block">
+// Metrics Recording Example
+Timer.Sample sample = Timer.start(meterRegistry);
+meterRegistry.counter("queueit_api_requests_total", "operation", "validate").increment();
+
+try {
+    // API call logic
+    meterRegistry.counter("queueit_api_success_total", "operation", "validate").increment();
+} catch (Exception e) {
+    meterRegistry.counter("queueit_api_errors_total", "operation", "validate", 
+                         "error_type", e.getClass().getSimpleName()).increment();
+} finally {
+    sample.stop(Timer.builder("queueit_validate_duration")
+               .tag("operation", "validate")
+               .register(meterRegistry));
+}
+                </div>
+            </div>
+
+            <!-- Load Testing Integration -->
+            <div class="section">
+                <h2>🧪 Load Testing Integration</h2>
+                
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        graph TB
+                            subgraph "Load Testing Infrastructure"
+                                k6[k6 Load Tester]
+                                ECS[ECS Tasks]
+                                Proxy[Proxy Rotation]
+                            end
+                            
+                            subgraph "Target Application"
+                                Nginx[🌐 Nginx]
+                                PetClinic[🏥 PetClinic]
+                                QueueIt[☁️ Queue-it]
+                            end
+                            
+                            subgraph "Monitoring"
+                                Prom[📈 Prometheus]
+                                Graf[📊 Grafana]
+                                CW[☁️ CloudWatch]
+                            end
+                            
+                            k6 --> ECS
+                            ECS --> Proxy
+                            Proxy --> Nginx
+                            Nginx --> PetClinic
+                            PetClinic --> QueueIt
+                            PetClinic --> Prom
+                            Prom --> Graf
+                            PetClinic --> CW
+                            
+                            style k6 fill:#fff3e0
+                            style ECS fill:#e3f2fd
+                            style Proxy fill:#f3e5f5
+                            style Nginx fill:#e8f5e8
+                            style PetClinic fill:#fff8e1
+                            style QueueIt fill:#fce4ec
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <h4>🎯 Load Testing Scenarios:</h4>
+                    <ul>
+                        <li><strong>Token Validation Testing:</strong> High-volume token validation requests</li>
+                        <li><strong>Queue Simulation:</strong> Multiple users entering/exiting queues</li>
+                        <li><strong>IP Diversity Testing:</strong> Requests from different IP ranges</li>
+                        <li><strong>Error Rate Testing:</strong> Invalid tokens and error conditions</li>
+                        <li><strong>Concurrent User Testing:</strong> Multiple virtual users</li>
+                    </ul>
+                </div>
+                
+                <div class="code-block">
+// k6 Load Test Script Example
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+    stages: [
+        { duration: '2m', target: 100 }, // Ramp up
+        { duration: '5m', target: 100 }, // Stay at 100 users
+        { duration: '2m', target: 0 },   // Ramp down
+    ],
+    thresholds: {
+        http_req_duration: ['p(95)<2000'], // 95% of requests under 2s
+        http_req_failed: ['rate<0.1'],     // Error rate under 10%
+    },
+};
+
+export default function() {
+    const token = 'test-token-' + Math.random();
+    const payload = JSON.stringify({ token: token });
+    
+    const response = http.post('https://affluenceit.com/integration/queueit/validate', payload, {
+        headers: { 'Content-Type': 'application/json' },
+    });
+    
+    check(response, {
+        'status is 200': (r) => r.status === 200,
+        'response time < 2000ms': (r) => r.timings.duration < 2000,
+    });
+    
+    sleep(1);
+}
+                </div>
+            </div>
+
+            <!-- Error Handling & Resilience -->
+            <div class="section">
+                <h2>🛡️ Error Handling & Resilience</h2>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>🚨 Error Scenarios</h4>
+                        <ul>
+                            <li><strong>Network Timeouts:</strong> 4-second timeout for API calls</li>
+                            <li><strong>Invalid Tokens:</strong> 400 Bad Request responses</li>
+                            <li><strong>Authentication Failures:</strong> 401 Unauthorized</li>
+                            <li><strong>Rate Limiting:</strong> 429 Too Many Requests</li>
+                            <li><strong>Service Unavailable:</strong> 502 Bad Gateway</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-card">
+                        <h4>🔧 Resilience Patterns</h4>
+                        <ul>
+                            <li><strong>Circuit Breaker:</strong> Automatic failure detection</li>
+                            <li><strong>Retry Logic:</strong> Configurable retry attempts</li>
+                            <li><strong>Fallback Responses:</strong> Graceful degradation</li>
+                            <li><strong>Health Checks:</strong> Proactive monitoring</li>
+                            <li><strong>Logging:</strong> Comprehensive error tracking</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="code-block">
+// Error Handling Example
+try {
+    String response = getJsonText(url);
+    meterRegistry.counter("queueit_api_success_total", "operation", "config").increment();
+    return ResponseEntity.ok(response);
+} catch (Exception e) {
+    System.out.println("[DEBUG] Exception in getIntegrationConfig: " + e.getMessage());
+    e.printStackTrace();
+    
+    // Record error metrics with error type
+    meterRegistry.counter("queueit_api_errors_total", 
+                         "operation", "config", 
+                         "error_type", e.getClass().getSimpleName()).increment();
+    
+    throw e; // Re-throw for proper error handling
+} finally {
+    sample.stop(Timer.builder("queueit_config_duration")
+               .tag("operation", "config")
+               .register(meterRegistry));
+}
+                </div>
+            </div>
+
+            <!-- Deployment Architecture -->
+            <div class="section">
+                <h2>🚀 Deployment Architecture</h2>
+                
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        graph TB
+                            subgraph "AWS Infrastructure"
+                                EC2[🖥️ EC2 Instance]
+                                SG[🔒 Security Groups]
+                                ELB[⚖️ Load Balancer]
+                            end
+                            
+                            subgraph "Application Stack"
+                                Docker[Docker Containers]
+                                Nginx[🌐 Nginx Container]
+                                PetClinic[🏥 PetClinic Container]
+                                Prometheus[📈 Prometheus Container]
+                                Grafana[📊 Grafana Container]
+                            end
+                            
+                            subgraph "External Services"
+                                QueueIt[☁️ Queue-it Cloud]
+                                CloudWatch[☁️ CloudWatch]
+                            end
+                            
+                            ELB --> EC2
+                            EC2 --> Docker
+                            Docker --> Nginx
+                            Docker --> PetClinic
+                            Docker --> Prometheus
+                            Docker --> Grafana
+                            
+                            PetClinic --> QueueIt
+                            PetClinic --> CloudWatch
+                            
+                            style EC2 fill:#e3f2fd
+                            style Docker fill:#f3e5f5
+                            style Nginx fill:#e8f5e8
+                            style PetClinic fill:#fff8e1
+                            style QueueIt fill:#fce4ec
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <h4>📋 Deployment Components:</h4>
+                    <ul>
+                        <li><strong>Docker Compose:</strong> Multi-container orchestration</li>
+                        <li><strong>Nginx Reverse Proxy:</strong> SSL termination and routing</li>
+                        <li><strong>Spring Boot Application:</strong> PetClinic with Queue-it integration</li>
+                        <li><strong>Monitoring Stack:</strong> Prometheus + Grafana</li>
+                        <li><strong>SSL Certificates:</strong> Let's Encrypt auto-renewal</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Security Architecture -->
+            <div class="section">
+                <h2>🔒 Security Architecture</h2>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>🛡️ Security Layers</h4>
+                        <ul>
+                            <li><strong>Network Security:</strong> AWS Security Groups</li>
+                            <li><strong>Transport Security:</strong> TLS 1.2+ with Let's Encrypt</li>
+                            <li><strong>Application Security:</strong> Input validation and sanitization</li>
+                            <li><strong>API Security:</strong> Queue-it API key authentication</li>
+                            <li><strong>Monitoring Security:</strong> Secure metrics collection</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-card">
+                        <h4>🔐 Authentication & Authorization</h4>
+                        <ul>
+                            <li><strong>Queue-it API Keys:</strong> Secure credential management</li>
+                            <li><strong>Request Signing:</strong> HMAC-based request validation</li>
+                            <li><strong>Session Management:</strong> Secure cookie handling</li>
+                            <li><strong>Rate Limiting:</strong> Protection against abuse</li>
+                            <li><strong>Audit Logging:</strong> Comprehensive security logs</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="tech-details">
+                    <h4>🔍 Security Best Practices Implemented:</h4>
+                    <ul>
+                        <li><strong>Credential Rotation:</strong> API keys can be rotated without application restart</li>
+                        <li><strong>Input Validation:</strong> All user inputs are validated before processing</li>
+                        <li><strong>Error Handling:</strong> Secure error messages without information disclosure</li>
+                        <li><strong>Monitoring:</strong> Security events are logged and monitored</li>
+                        <li><strong>HTTPS Enforcement:</strong> All production traffic uses HTTPS</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Performance Optimization -->
+            <div class="section">
+                <h2>⚡ Performance Optimization</h2>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>🚀 Performance Features</h4>
+                        <ul>
+                            <li><strong>Connection Pooling:</strong> RestTemplate with connection pooling</li>
+                            <li><strong>Timeout Management:</strong> Configurable timeouts (4s default)</li>
+                            <li><strong>Caching:</strong> Integration config caching</li>
+                            <li><strong>Async Processing:</strong> Non-blocking API calls</li>
+                            <li><strong>Metrics Optimization:</strong> Efficient metric collection</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-card">
+                        <h4>📊 Performance Monitoring</h4>
+                        <ul>
+                            <li><strong>Response Time Tracking:</strong> P95, P99 latency monitoring</li>
+                            <li><strong>Throughput Monitoring:</strong> Requests per second</li>
+                            <li><strong>Error Rate Tracking:</strong> Success/failure ratios</li>
+                            <li><strong>Resource Utilization:</strong> CPU, memory, network</li>
+                            <li><strong>Queue Depth Monitoring:</strong> Queue-it queue status</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="code-block">
+// Performance Optimization Example
+private static final int DOWNLOAD_TIMEOUT_MS = 4000;
+private static final int MAX_RETRY_COUNT = 5;
+
+private String getJsonText(String url) {
+    try {
+        URL resource = new URL(url);
+        URLConnection connection = resource.openConnection();
+        connection.setRequestProperty("api-key", API_KEY);
+        connection.setConnectTimeout(DOWNLOAD_TIMEOUT_MS);
+        connection.setReadTimeout(DOWNLOAD_TIMEOUT_MS);
+        
+        // Efficient streaming read
+        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
+        return response.toString();
+    } catch (IOException e) {
+        throw new RuntimeException("Failed to get JSON text from URL: " + url, e);
+    }
+}
+                </div>
+            </div>
+
+            <!-- Troubleshooting Guide -->
+            <div class="section">
+                <h2>🔧 Troubleshooting Guide</h2>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>🚨 Common Issues</h4>
+                        <ul>
+                            <li><strong>API Timeouts:</strong> Check network connectivity and Queue-it service status</li>
+                            <li><strong>Authentication Errors:</strong> Verify API keys and customer ID</li>
+                            <li><strong>SSL Certificate Issues:</strong> Check Let's Encrypt certificate renewal</li>
+                            <li><strong>High Error Rates:</strong> Monitor Grafana dashboards for patterns</li>
+                            <li><strong>Performance Degradation:</strong> Check resource utilization</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-card">
+                        <h4>🔍 Debugging Tools</h4>
+                        <ul>
+                            <li><strong>Grafana Dashboards:</strong> Real-time metrics visualization</li>
+                            <li><strong>CloudWatch Logs:</strong> Application and access logs</li>
+                            <li><strong>Queue-it Health Endpoint:</strong> /integration/queueit/health</li>
+                            <li><strong>Integration Test UI:</strong> /integration/queueit/</li>
+                            <li><strong>Nginx Access Logs:</strong> Request/response logging</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <h4>📋 Troubleshooting Steps:</h4>
+                    <ol>
+                        <li><strong>Check Application Health:</strong> Verify PetClinic is running and responding</li>
+                        <li><strong>Validate Queue-it Connectivity:</strong> Test /integration/queueit/health endpoint</li>
+                        <li><strong>Review Metrics:</strong> Check Grafana dashboards for error patterns</li>
+                        <li><strong>Examine Logs:</strong> Review CloudWatch logs for error details</li>
+                        <li><strong>Test Integration:</strong> Use /integration/queueit/validate with test tokens</li>
+                        <li><strong>Verify Configuration:</strong> Check QueueItSettings and API credentials</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Future Enhancements -->
+            <div class="section">
+                <h2>🔮 Future Enhancements</h2>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>🚀 Planned Improvements</h4>
+                        <ul>
+                            <li><strong>Configuration Externalization:</strong> Move credentials to environment variables</li>
+                            <li><strong>Circuit Breaker Implementation:</strong> Add resilience patterns</li>
+                            <li><strong>Advanced Caching:</strong> Redis-based caching for API responses</li>
+                            <li><strong>Multi-Region Support:</strong> Geographic distribution</li>
+                            <li><strong>Advanced Analytics:</strong> ML-based queue prediction</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-card">
+                        <h4>🔧 Technical Debt</h4>
+                        <ul>
+                            <li><strong>Code Refactoring:</strong> Extract common API call patterns</li>
+                            <li><strong>Test Coverage:</strong> Increase unit and integration test coverage</li>
+                            <li><strong>Documentation:</strong> API documentation with OpenAPI/Swagger</li>
+                            <li><strong>Monitoring Enhancement:</strong> Custom alerting rules</li>
+                            <li><strong>Security Hardening:</strong> Additional security measures</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- References -->
+            <div class="section">
+                <h2>📚 References & Resources</h2>
+                
+                <div class="architecture-grid">
+                    <div class="arch-card">
+                        <h4>🔗 Official Documentation</h4>
+                        <ul>
+                            <li><a href="https://docs.queue-it.com/" target="_blank">Queue-it Developer Documentation</a></li>
+                            <li><a href="https://spring.io/projects/spring-boot" target="_blank">Spring Boot Documentation</a></li>
+                            <li><a href="https://prometheus.io/docs/" target="_blank">Prometheus Documentation</a></li>
+                            <li><a href="https://grafana.com/docs/" target="_blank">Grafana Documentation</a></li>
+                            <li><a href="https://docs.aws.amazon.com/" target="_blank">AWS Documentation</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-card">
+                        <h4>📖 Technical Resources</h4>
+                        <ul>
+                            <li><a href="https://github.com/spring-projects/spring-petclinic" target="_blank">Spring PetClinic GitHub</a></li>
+                            <li><a href="https://k6.io/docs/" target="_blank">k6 Load Testing Documentation</a></li>
+                            <li><a href="https://nginx.org/en/docs/" target="_blank">Nginx Documentation</a></li>
+                            <li><a href="https://docs.docker.com/compose/" target="_blank">Docker Compose Documentation</a></li>
+                            <li><a href="https://letsencrypt.org/docs/" target="_blank">Let's Encrypt Documentation</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            sequence: {
+                useMaxWidth: true,
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35,
+                mirrorActors: true,
+                bottomMarginAdj: 1,
+                useMaxWidth: true,
+                rightAngles: false,
+                showSequenceNumbers: false
+            }
+        });
+    </script>
+</body>
+</html> 

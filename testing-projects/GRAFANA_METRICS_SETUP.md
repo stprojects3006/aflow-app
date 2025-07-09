@@ -40,6 +40,9 @@ The enhanced metrics system includes:
 ### 1. Start the Application Stack
 
 ```bash
+# Navigate to app-code directory
+cd app-code
+
 # Start all services (PetClinic, Prometheus, Grafana)
 docker-compose up -d
 
@@ -51,10 +54,10 @@ docker-compose ps
 
 ```bash
 # Make the import script executable (if not already)
-chmod +x import-grafana-dashboards.sh
+chmod +x deploy-grafana-dashboards.sh
 
 # Import all five dashboards
-./import-grafana-dashboards.sh
+./deploy-grafana-dashboards.sh
 ```
 
 ### 3. Access Dashboards
@@ -199,29 +202,31 @@ rate(http_server_requests_seconds_count{status=~"4..|5.."}[5m]) / rate(http_serv
 - **PetClinic Response Time**: Average response times
 - **PetClinic Status Code Distribution**: Success and error rate breakdown
 - **Top PetClinic Endpoints**: Most accessed PetClinic pages
-- **PetClinic Error Tracking**: Error rates and types
+- **PetClinic Error Analysis**: Error patterns and trends
+- **QueueIt Protected Routes**: Traffic to protected endpoints
+- **IP Address PetClinic Analysis**:
+  - PetClinic traffic by IP address
+  - Geographic distribution of PetClinic users
+  - Error rates by IP region for PetClinic endpoints
+
+**Metrics Used**:
+```promql
+# PetClinic requests (excluding QueueIt endpoints)
+rate(http_server_requests_seconds_count{uri!~"/integration/queueit/.*"}[5m])
+
+# PetClinic response time
+histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri!~"/integration/queueit/.*"}[5m]))
+
+# PetClinic error rate
+rate(http_server_requests_seconds_count{uri!~"/integration/queueit/.*",status=~"4..|5.."}[5m]) / rate(http_server_requests_seconds_count{uri!~"/integration/queueit/.*"}[5m]) * 100
+```
 
 ## 🔧 Configuration Details
 
-### Application Configuration (`application.properties`)
-```properties
-# Enhanced Metrics Configuration
-management.metrics.export.prometheus.descriptions=true
-management.metrics.export.prometheus.step=15s
-management.metrics.tags.application=petclinic
-management.metrics.tags.environment=development
+### Prometheus Configuration
 
-# Enhanced HTTP Metrics
-management.metrics.web.server.request.autotime.enabled=true
-management.metrics.web.server.request.autotime.percentiles=0.5,0.95,0.99
-management.metrics.web.server.request.autotime.percentiles-histogram=true
+The Prometheus configuration is located in `app-code/prometheus.yml`:
 
-# Queue-it integration metrics
-queueit.metrics.enabled=true
-queueit.metrics.ip-tracking.enabled=true
-```
-
-### Prometheus Configuration (`prometheus.yml`)
 ```yaml
 global:
   scrape_interval: 15s
@@ -229,393 +234,194 @@ global:
 
 scrape_configs:
   - job_name: 'petclinic'
-    metrics_path: '/actuator/prometheus'
     static_configs:
       - targets: ['petclinic:8080']
-    scrape_interval: 15s
-    honor_labels: true
-    
-  - job_name: 'k6'
-    static_configs:
-      - targets: ['host.docker.internal:6565']
-    scrape_interval: 15s
-    honor_labels: true
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
 ```
 
-## 🧪 Testing the Setup
+### Grafana Configuration
 
-### 1. Generate Traffic
+Grafana configuration is in `app-code/grafana.ini`:
+
+```ini
+[server]
+http_port = 3000
+
+[security]
+admin_user = admin
+admin_password = admin
+
+[auth.anonymous]
+enabled = true
+org_name = Main Org.
+org_role = Viewer
+```
+
+### Dashboard Import Process
+
+The `deploy-grafana-dashboards.sh` script:
+
+1. **Waits for Grafana to be ready**
+2. **Creates data source** (Prometheus)
+3. **Imports all dashboards** from `grafana-dashboards/` directory
+4. **Verifies import success**
 
 ```bash
-# Generate HTTP traffic to the application
-curl -X GET http://localhost:8080/
-curl -X GET http://localhost:8080/owners/find
-curl -X GET http://localhost:8080/vets.html
+#!/bin/bash
+# deploy-grafana-dashboards.sh
 
-# Test QueueIt integration endpoints (these will return 500 errors as expected)
-curl -X POST "http://localhost:8080/integration/queueit/queue?userId=test-user"
-curl -X POST "http://localhost:8080/integration/queueit/validate?token=test-token"
-curl -X GET http://localhost:8080/integration/queueit/status
-curl -X GET http://localhost:8080/integration/queueit/health
-curl -X POST "http://localhost:8080/integration/queueit/cancel?sessionId=test-session"
-curl -X POST "http://localhost:8080/integration/queueit/extend-cookie?sessionId=test-session"
-
-# Generate bulk traffic for testing
-for i in {1..50}; do 
-  curl -s http://localhost:8080/owners/find > /dev/null
-  curl -s http://localhost:8080/vets > /dev/null
-  curl -s http://localhost:8080/owners/1 > /dev/null
-  sleep 0.1
+echo "Waiting for Grafana to be ready..."
+until curl -s http://localhost:3000/api/health; do
+    sleep 2
 done
+
+echo "Creating Prometheus data source..."
+curl -X POST http://admin:admin@localhost:3000/api/datasources \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Prometheus",
+    "type": "prometheus",
+    "url": "http://prometheus:9090",
+    "access": "proxy"
+  }'
+
+echo "Importing dashboards..."
+for dashboard in grafana-dashboards/*.json; do
+    echo "Importing $dashboard..."
+    curl -X POST http://admin:admin@localhost:3000/api/dashboards/import \
+      -H "Content-Type: application/json" \
+      -d @$dashboard
+done
+
+echo "Dashboard deployment complete!"
 ```
 
-### 2. Load Testing with K6
+## 📊 QueueIt Integration Testing
 
-```bash
-# Install K6 (if not already installed)
-# macOS: brew install k6
-# Linux: https://k6.io/docs/getting-started/installation/
+### Load Testing with IP Diversity
 
-# Run load test
-k6 run --out prometheus=localhost:6565 testing-projects/k6-load-test/k6-load-test.js
+When running load tests with IP diversity (multiple ECS tasks), the dashboards will show:
+
+1. **Multiple IP Sources**: Each task contributes unique IP addresses
+2. **QueueIt Redirect Patterns**: 302 redirects to QueueIt for protected routes
+3. **Health Check Monitoring**: Continuous monitoring of QueueIt health endpoint
+4. **Error Distribution**: Errors distributed across multiple IP sources
+
+### Expected Metrics During Load Testing
+
+```promql
+# QueueIt redirects during load testing
+rate(http_server_requests_seconds_count{uri="/owners/new",status="302"}[5m])
+
+# Health endpoint monitoring
+rate(http_server_requests_seconds_count{uri="/integration/queueit/health",status="200"}[5m])
+
+# IP diversity analysis
+count by (instance) (rate(http_server_requests_seconds_count[5m]))
+
+# Error rate excluding health endpoint
+rate(http_server_requests_seconds_count{uri!="/integration/queueit/health",status=~"4..|5.."}[5m]) / rate(http_server_requests_seconds_count{uri!="/integration/queueit/health"}[5m]) * 100
 ```
-
-### 3. Test Metrics Script
-
-```bash
-# Run the comprehensive metrics test script
-./test-metrics.sh
-```
-
-## 📊 Error Tracking Features
-
-### Comprehensive HTTP Error Code Monitoring
-The enhanced dashboards now track all major HTTP error codes:
-
-- **400 Bad Request**: Client-side errors
-- **401 Unauthorized**: Authentication failures
-- **403 Forbidden**: Authorization failures
-- **404 Not Found**: Resource not found
-- **500 Internal Server Error**: Server-side errors
-- **502 Bad Gateway**: Gateway errors
-- **503 Service Unavailable**: Service unavailability
-
-### Error Analysis Capabilities
-- **Real-time Error Rates**: Monitor error rates per second
-- **Error Percentage Tracking**: Percentage breakdown of each error type
-- **Response Time Analysis**: How long each error type takes to respond
-- **Exception Correlation**: Link exceptions to specific error status codes
-- **Success Rate Calculation**: Success rate excluding all error responses
-- **Visual Thresholds**: Color-coded indicators for different error levels
-
-### Dashboard Refresh and Updates
-- **5-second Refresh Rate**: Real-time monitoring
-- **Auto-scaling Panels**: Responsive dashboard layouts
-- **Color-coded Thresholds**: Visual indicators for performance levels
-- **Comprehensive Legends**: Detailed metric descriptions
-
-## 🎯 Key Benefits
-
-1. **Complete Error Visibility**: Track all HTTP error codes, not just 500 errors
-2. **Real-time Monitoring**: 5-second refresh rate for immediate issue detection
-3. **Comprehensive Analysis**: Error rates, percentages, response times, and exceptions
-4. **Multiple Dashboard Views**: Different perspectives for different use cases
-5. **Easy Setup**: Automated import scripts and configuration
-6. **Production Ready**: Robust metrics collection and visualization
 
 ## 🔍 Troubleshooting
 
 ### Common Issues
 
-1. **"No Data" in Dashboards**
-   - Ensure Prometheus is scraping the PetClinic application
-   - Check that metrics are being generated: `curl http://localhost:8080/actuator/prometheus`
-   - Verify Prometheus targets are healthy: http://localhost:9090/targets
+1. **Dashboards Not Loading**
+   ```bash
+   # Check if Prometheus is accessible
+   curl http://localhost:9090/api/v1/status/targets
+   
+   # Check if PetClinic metrics are available
+   curl http://localhost:8080/actuator/prometheus
+   ```
 
-2. **Dashboard Import Failures**
-   - Ensure Grafana is running: `docker-compose ps`
-   - Check dashboard JSON format compatibility
-   - Verify datasource configuration in Grafana
+2. **No QueueIt Metrics**
+   ```bash
+   # Verify QueueIt integration is working
+   curl http://localhost:8080/integration/queueit/health
+   
+   # Check for 302 redirects
+   curl -I http://localhost:8080/owners/new
+   ```
 
-3. **Missing Error Metrics**
-   - Generate traffic to QueueIt endpoints to create error metrics
-   - Check application logs for any configuration issues
-   - Verify QueueIt integration controller is properly configured
+3. **Grafana Connection Issues**
+   ```bash
+   # Restart Grafana
+   docker-compose restart grafana
+   
+   # Check logs
+   docker-compose logs grafana
+   ```
 
-### Useful Commands
+### Performance Optimization
 
-```bash
-# Check application metrics
-curl -s http://localhost:8080/actuator/prometheus | grep -E "(queueit|http_requests)" | head -10
+1. **Reduce Scrape Interval** for high-frequency testing
+2. **Increase Retention** for longer-term analysis
+3. **Use Recording Rules** for complex queries
+4. **Optimize Dashboard Refresh** rates
 
-# Check Prometheus targets
-curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+## 📈 Advanced Monitoring
 
-# Check Grafana datasources
-curl -s -u admin:admin http://localhost:3000/api/datasources
+### Custom Alerts
 
-# Generate test traffic
-for i in {1..20}; do curl -s http://localhost:8080/integration/queueit/health > /dev/null; sleep 0.1; done
+Create alerts for critical QueueIt integration issues:
+
+```yaml
+# prometheus/alerts.yml
+groups:
+  - name: queueit_alerts
+    rules:
+      - alert: QueueItHealthDown
+        expr: up{job="petclinic"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "QueueIt health endpoint is down"
+          
+      - alert: HighQueueItErrorRate
+        expr: rate(http_server_requests_seconds_count{uri=~"/integration/queueit/.*",status=~"4..|5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High QueueIt error rate detected"
 ```
 
-## 📈 Next Steps
+### Custom Metrics
 
-1. **Customize Dashboards**: Modify panels and queries for your specific needs
-2. **Add Alerts**: Configure Grafana alerts for error thresholds
-3. **Scale Monitoring**: Add more applications and services to the monitoring stack
-4. **Performance Tuning**: Optimize metrics collection intervals and retention
-5. **Integration**: Connect with external monitoring systems and notification services
+Add custom metrics for QueueIt integration:
 
----
-
-**Last Updated**: December 2024  
-**Version**: 2.0 - Enhanced Error Tracking  
-**Compatibility**: Grafana 12.0.2+, Prometheus 2.x, Spring Boot 3.x
-
-## 📋 Metrics Reference
-
-### QueueIt Integration Metrics
-| Metric | Description | Type |
-|--------|-------------|------|
-| `queueit_api_requests_total` | Total API requests by operation | Counter |
-| `queueit_api_success_total` | Successful API requests by operation | Counter |
-| `queueit_api_errors_total` | Failed API requests by operation | Counter |
-| `queueit_*_duration_seconds` | Response time for each operation | Histogram |
-| `queueit_validate_total` | Total validate operations | Counter |
-| `queueit_queue_total` | Total queue operations | Counter |
-| `queueit_cancel_total` | Total cancel operations | Counter |
-
-### QueueIt Filter Metrics
-| Metric | Description | Type |
-|--------|-------------|------|
-| `queueit_filter_requests_total` | Total requests processed by filter | Counter |
-| `queueit_filter_proceed_total` | Requests that proceeded to application | Counter |
-| `queueit_filter_blocked_total` | Requests blocked by filter | Counter |
-| `queueit_redirects_total` | Total redirects by action type | Counter |
-| `queueit_http_redirects_total` | HTTP redirects | Counter |
-| `queueit_ajax_redirects_total` | AJAX redirects | Counter |
-| `queueit_validations_success_total` | Successful validations by action type | Counter |
-| `queueit_validation_errors_total` | Validation errors by error type | Counter |
-
-### Application HTTP Metrics
-| Metric | Description | Type |
-|--------|-------------|------|
-| `http_server_requests_seconds_count` | Total HTTP requests by status/method/uri | Counter |
-| `http_server_requests_seconds_bucket` | HTTP request duration histogram | Histogram |
-| `http_server_requests_seconds_sum` | Total HTTP request duration | Counter |
-
-## 🎨 Dashboard Features
-
-### Visual Design
-- **Dark Theme**: Modern dark theme for better readability
-- **Color Coding**: Green for success, yellow for warning, red for errors
-- **Human-Friendly Legends**: Clear, descriptive panel titles and legends
-- **Responsive Layout**: Panels automatically adjust to screen size
-
-### Interactive Features
-- **Time Range Selection**: Flexible time range controls
-- **Auto-refresh**: Dashboards refresh every 5 seconds
-- **Drill-down Capability**: Click on panels for detailed views
-- **Export Options**: PNG, PDF, and JSON export capabilities
-
-### Alerting Ready
-- **Thresholds**: Pre-configured thresholds for critical metrics
-- **Alert Rules**: Ready-to-use Prometheus alert rules
-- **Notification Channels**: Easy integration with Slack, email, etc.
-
-## 📚 Additional Resources
-
-- [Prometheus Query Language (PromQL)](https://prometheus.io/docs/prometheus/latest/querying/)
-- [Grafana Dashboard Documentation](https://grafana.com/docs/grafana/latest/dashboards/)
-- [Spring Boot Actuator Metrics](https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.metrics)
-- [QueueIt Integration Guide](https://queue-it.com/docs/connectors/aspnet-core)
-
----
-
-**Note**: This setup provides comprehensive monitoring for QueueIt integration and application performance. The dashboards are designed to be both informative for developers and actionable for operations teams. 
-
-## IP Address Tracking Features
-
-### Geographic Regions Monitored
-- **North America**: `192.168.x.x` (private networks)
-- **Private Networks**: `10.x.x.x` and `172.16.x.x`
-- **Europe**: `193.x.x.x` and `194.x.x.x`
-- **Asia**: `202.x.x.x` and `203.x.x.x`
-- **Mobile Networks**: `100.64.x.x` and `100.65.x.x`
-
-### IP Analysis Capabilities
-1. **Geographic Distribution**: Track traffic patterns by region
-2. **Performance Analysis**: Compare response times and error rates by region
-3. **Security Monitoring**: Identify suspicious IP addresses or regions
-4. **Load Distribution**: Understand traffic distribution across regions
-5. **Capacity Planning**: Identify high-traffic regions for infrastructure planning
-
-## Configuration
-
-### Prerequisites
-- Docker and Docker Compose installed
-- Spring Boot application with Actuator enabled
-- Prometheus configured for metrics collection
-
-### Environment Setup
-```bash
-# Clone the repository
-git clone <repository-url>
-cd spring-petclinic-main
-
-# Start the monitoring stack
-docker-compose up -d prometheus grafana
+```java
+// QueueItIntegrationController.java
+@RestController
+@RequestMapping("/integration/queueit")
+public class QueueItIntegrationController {
+    
+    private final Counter queueitRequestsTotal = Counter.build()
+        .name("queueit_requests_total")
+        .help("Total QueueIt requests")
+        .labelNames("endpoint", "status")
+        .register();
+    
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        queueitRequestsTotal.labels("health", "200").inc();
+        return ResponseEntity.ok("QueueIt integration is healthy");
+    }
+}
 ```
 
-### Application Configuration
-Ensure your `application.properties` includes:
-```properties
-# Actuator configuration
-management.endpoints.web.exposure.include=health,info,metrics,prometheus
-management.metrics.export.prometheus.enabled=true
-management.metrics.tags.application=petclinic
+## 🎯 Summary
 
-# Queue-it integration metrics
-queueit.metrics.enabled=true
-queueit.metrics.ip-tracking.enabled=true
-```
+This enhanced Grafana metrics setup provides:
 
-## Dashboard Import
+1. **Comprehensive QueueIt Monitoring**: Real-time tracking of QueueIt integration performance
+2. **IP Diversity Analysis**: Monitor load testing with multiple IP sources
+3. **Error Tracking**: Detailed error analysis and alerting
+4. **Performance Insights**: Response times, throughput, and resource utilization
+5. **Geographic Analysis**: IP-based traffic distribution and error patterns
 
-### Automatic Import
-Use the provided import script:
-```bash
-./import-grafana-dashboards.sh
-```
-
-### Manual Import
-1. Access Grafana at `http://localhost:3000`
-2. Navigate to Dashboards → Import
-3. Import each dashboard JSON file from `testing-projects/grafana-dashboards/`
-
-## Testing and Validation
-
-### Generate Test Traffic
-```bash
-# Basic traffic generation
-./test-metrics.sh
-
-# IP spoofing load test
-./run-ip-spoofing-load-test.sh
-```
-
-### K6 Load Testing with IP Spoofing
-```bash
-# Run K6 load test with IP spoofing
-cd testing-projects/k6-load-test/
-./run-ip-spoofing-load-test.sh
-```
-
-The K6 script generates traffic from various IP ranges:
-- North America: `192.168.x.x`
-- Private Networks: `10.x.x.x`, `172.16.x.x`
-- Europe: `193.x.x.x`, `194.x.x.x`
-- Asia: `202.x.x.x`, `203.x.x.x`
-- Mobile Networks: `100.64.x.x`, `100.65.x.x`
-
-## Metrics Collection
-
-### Prometheus Metrics
-The application exposes these key metrics:
-- `http_server_requests_seconds_count`: HTTP request counts
-- `http_server_requests_seconds_sum`: HTTP request durations
-- `queueit_filter_requests_total`: Queue-it filter requests
-- `queueit_redirects_total`: Queue-it redirects
-- `queueit_validations_success_total`: Successful validations
-
-### IP Address Tracking
-IP addresses are captured in the `client_ip` label for:
-- HTTP request metrics
-- Queue-it integration metrics
-- Error tracking metrics
-
-## Troubleshooting
-
-### Common Issues
-
-#### 1. "No Data" in Dashboards
-**Symptoms**: Dashboards show "No data" despite application running
-**Solutions**:
-- Verify Prometheus is collecting metrics: `http://localhost:9090/targets`
-- Check application metrics endpoint: `http://localhost:8080/actuator/prometheus`
-- Ensure proper datasource configuration in Grafana
-
-#### 2. IP Address Data Not Appearing
-**Symptoms**: IP address panels show no data
-**Solutions**:
-- Verify IP spoofing is working in load tests
-- Check that `client_ip` label is present in metrics
-- Ensure load tests are generating traffic from different IP ranges
-
-#### 3. Dashboard Import Failures
-**Symptoms**: HTTP 400 errors during import
-**Solutions**:
-- Verify JSON format is correct
-- Check Grafana version compatibility
-- Ensure datasource is configured as "Prometheus"
-
-### Verification Steps
-1. **Check Prometheus Targets**: `http://localhost:9090/targets`
-2. **Verify Metrics**: `http://localhost:9090/graph`
-3. **Test Queries**: Use Prometheus UI to test metric queries
-4. **Validate IP Data**: Run IP spoofing tests and verify data appears
-
-## Performance Considerations
-
-### Metric Cardinality
-- IP address tracking increases metric cardinality
-- Monitor Prometheus memory usage
-- Consider metric retention policies
-
-### Storage Requirements
-- IP address data requires additional storage
-- Plan for increased Prometheus storage needs
-- Monitor disk usage regularly
-
-## Security Considerations
-
-### IP Address Privacy
-- IP addresses are stored in Prometheus
-- Consider data retention policies
-- Implement access controls for sensitive data
-
-### Network Security
-- Ensure monitoring stack is properly secured
-- Use HTTPS for Grafana access
-- Implement authentication for dashboard access
-
-## Next Steps
-
-### Advanced Features
-1. **Alerting**: Set up Grafana alerts for error thresholds
-2. **Custom Metrics**: Add application-specific metrics
-3. **Geographic Mapping**: Integrate with IP geolocation services
-4. **Anomaly Detection**: Implement automated anomaly detection
-
-### Scaling Considerations
-1. **High Cardinality**: Monitor metric cardinality growth
-2. **Storage Planning**: Plan for long-term metric storage
-3. **Performance Optimization**: Optimize queries for large datasets
-4. **Multi-Region**: Consider multi-region monitoring setup
-
-## Support and Maintenance
-
-### Regular Tasks
-- Monitor dashboard performance
-- Review and update alerting rules
-- Clean up old metrics data
-- Update dashboard configurations
-
-### Documentation Updates
-- Keep this guide updated with new features
-- Document custom metrics and configurations
-- Maintain troubleshooting procedures
-
-## Conclusion
-
-This monitoring setup provides comprehensive visibility into your Spring PetClinic application with Queue-it integration, including detailed IP address tracking for geographic and network-based analysis. The dashboards enable proactive monitoring, troubleshooting, and capacity planning based on real traffic patterns. 
+The dashboards are designed to work seamlessly with the IP diversity load testing setup, providing insights into both the technical performance and business impact of QueueIt integration! 🚀 

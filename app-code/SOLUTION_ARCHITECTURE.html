@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spring PetClinic Solution Architecture</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f7f9fa; color: #222; margin: 0; padding: 0; }
+    header { background: #2d7dd2; color: #fff; padding: 2rem 1rem 1rem 1rem; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    main { max-width: 1100px; margin: 2rem auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); padding: 2rem 2.5rem; }
+    h1, h2, h3 { color: #2d7dd2; margin-top: 1.5rem; }
+    h1 { margin-bottom: 0.5rem; }
+    h2 { border-bottom: 1px solid #e0e0e0; padding-bottom: 0.3rem; margin-bottom: 1rem; }
+    section { margin-bottom: 2.5rem; }
+    pre, code { background: #f4f6f8; color: #1a3a5d; border-radius: 4px; padding: 0.2em 0.4em; font-size: 1em; }
+    pre { display: block; padding: 1em; margin: 1em 0; overflow-x: auto; }
+    .diagram { background: #f4f6f8; border-left: 4px solid #2d7dd2; padding: 1em 1.5em; margin: 1em 0; border-radius: 6px; font-family: 'Courier New', monospace; }
+    .info, .success, .warning { margin: 1em 0; border-radius: 6px; padding: 1em 1.5em; }
+    .info { background: #d1ecf1; border-left: 4px solid #17a2b8; color: #0c5460; }
+    .success { background: #d4edda; border-left: 4px solid #28a745; color: #155724; }
+    .warning { background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; }
+    ul, ol { margin-left: 1.5em; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: #f9fbfc; border-radius: 6px; overflow: hidden; }
+    th, td { padding: 0.7rem 1rem; border-bottom: 1px solid #e0e0e0; text-align: left; }
+    th { background: #eaf3fa; color: #2d7dd2; font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    @media (max-width: 600px) { main { padding: 1rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Spring PetClinic Solution Architecture</h1>
+    <p>Comprehensive architecture for the PetClinic application, QueueIt integration, monitoring, and deployment.</p>
+  </header>
+  <main>
+    <section>
+      <h2>1. Overview</h2>
+      <div class="info">
+        <strong>Stack:</strong> Spring Boot, Maven, Docker, MySQL/Postgres/H2, Prometheus, Grafana, Nginx, AWS (optional), QueueIt integration, K6 load testing.
+      </div>
+      <ul>
+        <li>Modular Java backend (Spring Boot, Maven)</li>
+        <li>Multiple database support (H2, MySQL, Postgres)</li>
+        <li>QueueIt integration for queue management and protection</li>
+        <li>Comprehensive monitoring (Prometheus, Grafana, custom dashboards)</li>
+        <li>Containerized deployment (Docker Compose, Nginx reverse proxy)</li>
+        <li>Cloud-ready (AWS ECS, Fargate, S3, CloudWatch, etc.)</li>
+        <li>DevOps automation scripts for build, deploy, and monitoring</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. High-Level Architecture</h2>
+      <div class="diagram">
+        <pre>
++-------------------+      +-------------------+      +-------------------+
+|   User Browser    | ---> |      Nginx        | ---> |   PetClinic App   |
++-------------------+      +-------------------+      +-------------------+
+         |                        |                          |
+         |                        |                          |
+         |                        v                          v
+         |                 +-----------+              +-------------+
+         |                 |  Grafana  | <---+        |  Databases  |
+         |                 +-----------+     |        +-------------+
+         |                        ^          |                ^
+         |                        |          |                |
+         |                 +-----------+     |        +-------------+
+         |                 | Prometheus|-----+        |   QueueIt   |
+         |                 +-----------+              +-------------+
+         |                        ^
+         |                        |
+         |                 +-----------+
+         |                 |   K6      |
+         |                 +-----------+
+        </pre>
+      </div>
+      <ul>
+        <li><strong>Nginx</strong>: Reverse proxy for routing, SSL termination, and static content</li>
+        <li><strong>PetClinic App</strong>: Spring Boot application, exposes REST and web endpoints</li>
+        <li><strong>Databases</strong>: MySQL, Postgres, or H2 (dev/test)</li>
+        <li><strong>QueueIt</strong>: Cloud-based queue management for protected routes</li>
+        <li><strong>Prometheus</strong>: Metrics scraping from PetClinic and infrastructure</li>
+        <li><strong>Grafana</strong>: Visualization and alerting (5+ dashboards)</li>
+        <li><strong>K6</strong>: Load testing with IP diversity (AWS ECS tasks)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. Application Structure</h2>
+      <ul>
+        <li><strong>src/main/java/org/springframework/samples/petclinic/</strong>
+          <ul>
+            <li>model/: Domain models (Owner, Pet, Vet, etc.)</li>
+            <li>owner/, vet/: Controllers, repositories, business logic</li>
+            <li>integration/: QueueIt integration controller, settings</li>
+            <li>system/: App config, cache, web config, welcome, crash</li>
+            <li>config/: RestTemplate and other beans</li>
+          </ul>
+        </li>
+        <li><strong>src/main/resources/</strong>
+          <ul>
+            <li>application.properties: DB, QueueIt, metrics, logging</li>
+            <li>db/: SQL scripts for H2, MySQL, Postgres</li>
+            <li>templates/: Thymeleaf HTML templates</li>
+            <li>static/: CSS, images, fonts</li>
+          </ul>
+        </li>
+        <li><strong>aws-ec2/</strong>: AWS deployment scripts, Docker Compose for AWS, Nginx config</li>
+        <li><strong>grafana-dashboards/</strong>: 5+ JSON dashboards for Grafana</li>
+        <li><strong>load-test/</strong>: K6 load test scripts, error generators</li>
+        <li><strong>Dockerfile</strong>: Spring Boot app containerization</li>
+        <li><strong>docker-compose.*.yml</strong>: Compose files for app and infra</li>
+        <li><strong>deploy*.sh</strong>: Build, deploy, and monitoring automation</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Deployment & Networking</h2>
+      <ul>
+        <li><strong>Local:</strong> <code>docker-compose.infra.yml</code> (MySQL, Postgres, Prometheus, Grafana, Nginx), <code>docker-compose.app.yml</code> (PetClinic app)</li>
+        <li><strong>Cloud:</strong> <code>aws-ec2/</code> scripts for ECS, Fargate, CloudFront, S3, etc.</li>
+        <li><strong>Nginx:</strong> Handles SSL, reverse proxy, static content, and routing to app and dashboards</li>
+        <li><strong>Networking:</strong> All services on <code>petclinic-net</code> Docker network; AWS VPC/subnets for cloud</li>
+      </ul>
+      <div class="diagram">
+        <pre>
+[User] -> [Nginx] -> [PetClinic:8080]
+                   -> [Grafana:3000]
+                   -> [Prometheus:9090]
+                   -> [DB:3306/5432]
+        </pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. QueueIt Integration</h2>
+      <ul>
+        <li>Official QueueIt connector (Maven dependency)</li>
+        <li>Protected routes (e.g., <code>/owners/new</code>) trigger 302 redirects to QueueIt</li>
+        <li>Integration controller for health, config, queue, validation, and test endpoints</li>
+        <li>Configuration in <code>application.properties</code> (customer ID, event ID, secret key, API key)</li>
+        <li>Metrics for QueueIt API calls, redirects, errors, and health</li>
+      </ul>
+      <div class="diagram">
+        <pre>
+[User] -> [Nginx] -> [PetClinic] --(protected route)--> [QueueIt Cloud]
+        </pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. Monitoring & Observability</h2>
+      <ul>
+        <li><strong>Prometheus:</strong> Scrapes metrics from PetClinic (<code>/actuator/prometheus</code>), Nginx, DBs</li>
+        <li><strong>Grafana:</strong> 5+ dashboards (QueueIt Integration, Error Tracking, Request Volume, App HTTP Traffic, PetClinic Traffic)</li>
+        <li><strong>Custom Metrics:</strong> QueueIt API, filter, redirects, validation, error rates, IP tracking</li>
+        <li><strong>Alerting:</strong> Prometheus alert rules, Grafana notifications</li>
+      </ul>
+      <div class="diagram">
+        <pre>
+[Prometheus] <--- [PetClinic: /actuator/prometheus]
+            <--- [Nginx, MySQL, Postgres]
+[Grafana] <--- [Prometheus]
+        </pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>7. Load Testing & IP Diversity</h2>
+      <ul>
+        <li><strong>K6:</strong> Load testing with scripts targeting protected and public routes</li>
+        <li><strong>IP Diversity:</strong> Multiple ECS tasks, each with unique AWS public IP (Fargate, VPC, subnet)</li>
+        <li><strong>Scripts:</strong> <code>run-10-vu-tasks.sh</code>, <code>run-enhanced-queueit-test.sh</code></li>
+        <li><strong>Metrics:</strong> Unique IPs, redirect rates, error rates, response times</li>
+      </ul>
+      <div class="diagram">
+        <pre>
+[K6 ECS Task 1] (IP 3.x.x.1) -> [Nginx] -> [PetClinic]
+[K6 ECS Task 2] (IP 3.x.x.2) -> [Nginx] -> [PetClinic]
+...
+        </pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>8. DevOps & Automation</h2>
+      <ul>
+        <li><strong>Shell Scripts:</strong> <code>deploy.sh</code>, <code>deploy-app.sh</code>, <code>deploy-infra.sh</code>, <code>deploy-grafana-dashboards.sh</code></li>
+        <li><strong>CI/CD:</strong> Maven/Gradle build, Docker image build, test, and deploy</li>
+        <li><strong>Cloud Automation:</strong> <code>aws-ec2/</code> scripts for ECS, Fargate, CloudFront, S3</li>
+        <li><strong>Health Checks:</strong> Automated health checks for all services</li>
+        <li><strong>Dashboard Import:</strong> Automated Grafana dashboard import</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>9. Security & Best Practices</h2>
+      <ul>
+        <li>Network isolation (Docker network, AWS VPC/subnets)</li>
+        <li>Secrets managed via environment variables or config files</li>
+        <li>Role-based access for AWS resources</li>
+        <li>SSL termination at Nginx (optional)</li>
+        <li>Database credentials not hardcoded in code</li>
+        <li>Comprehensive logging and error tracking</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>10. Summary Diagram (Mermaid)</h2>
+      <div class="diagram">
+        <pre>
+flowchart TD
+    User-->|HTTP|Nginx
+    Nginx-->|/owners/new|PetClinic
+    Nginx-->|/grafana|Grafana
+    Nginx-->|/prometheus|Prometheus
+    PetClinic-->|Protected|QueueIt
+    PetClinic-->|DB|MySQL
+    PetClinic-->|DB|Postgres
+    PetClinic-->|Metrics|Prometheus
+    Prometheus-->|Dashboards|Grafana
+    K6-->|Load|Nginx
+        </pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>11. References</h2>
+      <ul>
+        <li><a href="https://github.com/spring-projects/spring-petclinic">Spring PetClinic GitHub</a></li>
+        <li><a href="https://queue-it.com/">QueueIt</a></li>
+        <li><a href="https://prometheus.io/">Prometheus</a></li>
+        <li><a href="https://grafana.com/">Grafana</a></li>
+        <li><a href="https://k6.io/">K6 Load Testing</a></li>
+        <li><a href="https://docs.docker.com/compose/">Docker Compose</a></li>
+        <li><a href="https://aws.amazon.com/ecs/">AWS ECS</a></li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html> 

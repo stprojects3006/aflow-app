@@ -6,24 +6,26 @@
 2. [System Architecture](#system-architecture)
 3. [Component Details](#component-details)
 4. [Request Flow Diagrams](#request-flow-diagrams)
-5. [IP Address Assignment Flow](#ip-address-assignment-flow)
+5. [IP Diversity Assignment Flow](#ip-diversity-assignment-flow)
 6. [Test Execution Flow](#test-execution-flow)
-7. [Results Processing Flow](#results-processing-flow)
-8. [Data Flow Architecture](#data-flow-architecture)
-9. [Security Architecture](#security-architecture)
-10. [Scalability Considerations](#scalability-considerations)
-11. [Monitoring & Observability](#monitoring--observability)
-12. [Cost Optimization](#cost-optimization)
+7. [QueueIt Integration Flow](#queueit-integration-flow)
+8. [Results Processing Flow](#results-processing-flow)
+9. [Data Flow Architecture](#data-flow-architecture)
+10. [Security Architecture](#security-architecture)
+11. [Scalability Considerations](#scalability-considerations)
+12. [Monitoring & Observability](#monitoring--observability)
+13. [Cost Optimization](#cost-optimization)
 
 ---
 
 ## 🎯 Overview
 
-This document provides a comprehensive view of the K6 Load Testing solution architecture, detailing how AWS Fargate, ECS, and other components work together to deliver scalable, serverless load testing capabilities.
+This document provides a comprehensive view of the K6 Load Testing solution architecture with IP diversity and QueueIt integration, detailing how AWS Fargate, ECS, and other components work together to deliver scalable, serverless load testing capabilities.
 
 ### **Key Objectives**
 - **Serverless Load Testing**: No server management required
 - **IP Diversity**: Multiple unique IP addresses for realistic testing
+- **QueueIt Integration**: Comprehensive queue management testing
 - **Scalable Architecture**: Handle varying load testing requirements
 - **Cost Optimization**: Pay only for actual test execution
 - **Comprehensive Monitoring**: Real-time metrics and logging
@@ -40,22 +42,33 @@ This document provides a comprehensive view of the K6 Load Testing solution arch
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐        │
-│  │   ECR Registry  │    │   ECS Cluster   │    │   CloudWatch    │        │
+│  │   ECS Cluster   │    │   CloudWatch    │    │   S3 Bucket     │        │
 │  │                 │    │                 │    │                 │        │
 │  │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │        │
-│  │ │   K6 Image  │ │    │ │ Fargate     │ │    │ │   Logs      │ │        │
-│  │ │   Container │ │    │ │ Tasks       │ │    │ │   Metrics   │ │        │
+│  │ │ Task 1      │ │    │ │   Logs      │ │    │ │ Test Results│ │        │
+│  │ │ IP: 3.x.x.1 │ │    │ │   Metrics   │ │    │ │ Logs        │ │        │
 │  │ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │        │
-│  └─────────────────┘    └─────────────────┘    └─────────────────┘        │
-│           │                       │                       │                │
-│           │                       │                       │                │
+│  │ ┌─────────────┐ │    └─────────────────┘    └─────────────────┘        │
+│  │ │ Task 2      │ │                                                       │
+│  │ │ IP: 3.x.x.2 │ │                                                       │
+│  │ └─────────────┘ │                                                       │
+│  │ ┌─────────────┐ │                                                       │
+│  │ │ Task 3      │ │                                                       │
+│  │ │ IP: 3.x.x.3 │ │                                                       │
+│  │ └─────────────┘ │                                                       │
+│  │ ┌─────────────┐ │                                                       │
+│  │ │ Task 10     │ │                                                       │
+│  │ │ IP: 3.x.x.10│ │                                                       │
+│  │ └─────────────┘ │                                                       │
+│  └─────────────────┘                                                       │
+│                                                                             │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐        │
-│  │   S3 Bucket     │    │   VPC Network   │    │   IAM Roles     │        │
+│  │   VPC Network   │    │   IAM Roles     │    │   Terraform     │        │
 │  │                 │    │                 │    │                 │        │
 │  │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │        │
-│  │ │ Test Results│ │    │ │ Public      │ │    │ │ Task Role   │ │        │
-│  │ │ Logs        │ │    │ │ Subnet      │ │    │ │ Execution   │ │        │
-│  │ │ Metrics     │ │    │ │ IGW         │ │    │ │ Role        │ │        │
+│  │ │ Public      │ │    │ │ Task Role   │ │    │ │ Infrastructure│ │        │
+│  │ │ Subnet      │ │    │ │ Execution   │ │    │ │ Management   │ │        │
+│  │ │ IGW         │ │    │ │ Role        │ │    │ │              │ │        │
 │  │ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │        │
 │  └─────────────────┘    └─────────────────┘    └─────────────────┘        │
 │                                                                             │
@@ -65,6 +78,12 @@ This document provides a comprehensive view of the K6 Load Testing solution arch
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                        Target Application                                 │
 │                    https://affluenceit.com/                              │
+│                                                                             │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐        │
+│  │ QueueIt Filter  │    │ Protected Route │    │ Public Route    │        │
+│  │ /owners/new     │    │ /owners/new     │    │ /               │        │
+│  │ 302 Redirect    │    │ QueueIt Check   │    │ Direct Access   │        │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘        │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -81,15 +100,16 @@ This document provides a comprehensive view of the K6 Load Testing solution arch
 - **Pay-per-Task**: Only pay when containers are running
 - **Automatic Scaling**: Start/stop based on demand
 - **VPC Integration**: Direct network access with public IPs
+- **IP Diversity**: Each task gets unique public IP
 
 **Configuration**:
 ```terraform
 resource "aws_ecs_task_definition" "k6_task" {
-  family                   = "${var.project_name}-k6-task"
+  family                   = "k6-single-vu-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = var.task_cpu
-  memory                   = var.task_memory
+  cpu                      = 256
+  memory                   = 512
 }
 ```
 
@@ -102,12 +122,13 @@ resource "aws_ecs_task_definition" "k6_task" {
 - **Resource Management**: Allocates CPU/memory to tasks
 - **Service Discovery**: Enables container communication
 - **Health Monitoring**: Tracks container health
+- **IP Assignment**: Each task gets unique public IP
 
 ### **3. VPC Network Infrastructure**
 
 **Components**:
 - **VPC**: Isolated network environment
-- **Public Subnet**: Internet-accessible resources
+- **Public Subnet**: Internet-accessible resources with auto-assign public IP
 - **Internet Gateway**: Internet connectivity
 - **Route Tables**: Traffic routing rules
 - **Security Groups**: Network access control
@@ -117,22 +138,40 @@ resource "aws_ecs_task_definition" "k6_task" {
 ECS Task → Public Subnet → Internet Gateway → Internet → Target Application
 ```
 
+**Current Configuration**:
+```terraform
+resource "aws_vpc" "k6_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+}
+
+resource "aws_subnet" "k6_public_subnet" {
+  vpc_id                  = aws_vpc.k6_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true  # ← Enables auto-assign
+}
+```
+
 ### **4. S3 Storage**
 
 **Role**: Persistent storage for test results and logs
 
 **Storage Structure**:
 ```
-s3://k6-load-test-results-[project]-[suffix]/
+s3://k6-load-test-results-786407478307/
 ├── test-results/
-│   ├── basic/
-│   │   ├── 20240706-143022/
-│   │   │   ├── results.json
-│   │   │   ├── test-summary.json
-│   │   │   └── k6.log
-│   │   └── 20240706-150145/
-│   ├── stress/
-│   └── spike/
+│   ├── 20250709-114704/
+│   │   ├── results.json              # Detailed k6 metrics
+│   │   ├── test-summary.json         # Test metadata
+│   │   ├── k6.log                   # Application logs
+│   │   └── queueit-analysis.json    # QueueIt integration data
+│   └── 20250709-120000/
+│       ├── results.json
+│       ├── test-summary.json
+│       ├── k6.log
+│       └── queueit-analysis.json
 ```
 
 ### **5. CloudWatch Monitoring**
@@ -143,30 +182,47 @@ s3://k6-load-test-results-[project]-[suffix]/
 - **Dashboard**: Visual monitoring interface
 - **Alarms**: Automated alerting
 
+**Current Configuration**:
+```terraform
+resource "aws_cloudwatch_log_group" "k6_logs" {
+  name              = "/ecs/k6-single-vu-task"
+  retention_in_days = 7
+}
+```
+
 ---
 
 ## 🔄 Request Flow Diagrams
 
-### **1. IP Address Assignment Flow**
+### **1. IP Diversity Assignment Flow**
 
 ```mermaid
 flowchart TD
-    A[Deploy ECS Task] --> B[Fargate Allocates Resources]
-    B --> C[VPC Assigns Private IP]
-    C --> D[Public Subnet Assigns Public IP]
-    D --> E[Internet Gateway Routes Traffic]
-    E --> F[Security Group Validates Access]
-    F --> G[Task Ready with Public IP]
+    A[./run-10-vu-tasks.sh] --> B[Launch 10 ECS Tasks]
+    B --> C[Each Task Gets Unique IP]
+    C --> D[Task 1: IP 3.x.x.1]
+    C --> E[Task 2: IP 3.x.x.2]
+    C --> F[Task 3: IP 3.x.x.3]
+    C --> G[Task 10: IP 3.x.x.10]
     
-    G --> H[K6 Container Starts]
-    H --> I[Load Test Script Executes]
-    I --> J[VUs Generate Requests]
-    J --> K[Requests Use Container's Public IP]
-    K --> L[Target Application Receives Requests]
+    D --> H[VU 1: Request to QueueIt]
+    E --> I[VU 1: Request to QueueIt]
+    F --> J[VU 1: Request to QueueIt]
+    G --> K[VU 1: Request to QueueIt]
+    
+    H --> L[QueueIt Filter]
+    I --> L
+    J --> L
+    K --> L
+    
+    L --> M[302 Redirect or 200 OK]
+    M --> N[K6 Processes Response]
+    N --> O[Update Metrics]
+    O --> P[Upload Results]
     
     style A fill:#e1f5fe
-    style G fill:#c8e6c9
-    style L fill:#fff3e0
+    style M fill:#c8e6c9
+    style P fill:#fff3e0
 ```
 
 **Detailed Steps**:
@@ -174,15 +230,16 @@ flowchart TD
 1. **Task Deployment**
    ```bash
    aws ecs run-task \
-     --cluster k6-cluster \
-     --task-definition k6-task \
+     --cluster k6-load-test-cluster \
+     --task-definition k6-single-vu-task \
      --launch-type FARGATE \
-     --network-configuration "awsvpcConfiguration={subnets=[subnet-123],securityGroups=[sg-123],assignPublicIp=ENABLED}"
+     --network-configuration "awsvpcConfiguration={subnets=[subnet-097cbe067e542243a],securityGroups=[sg-0737d6eb4011e161c],assignPublicIp=ENABLED}" \
+     --region us-east-1
    ```
 
 2. **Fargate Resource Allocation**
-   - CPU: 1024 units (1 vCPU)
-   - Memory: 2048 MiB
+   - CPU: 256 units (0.25 vCPU)
+   - Memory: 512 MiB
    - Network: awsvpc mode
 
 3. **IP Assignment Process**
@@ -199,276 +256,377 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Container Starts] --> B[K6 Script Loads]
-    B --> C[Environment Variables Set]
-    C --> D[Target URL Configured]
-    D --> E[Test Parameters Applied]
-    E --> F[VUs Initialize]
+    A[User Runs Test] --> B{Test Type?}
+    B -->|Simple| C[./run-10-vu-tasks.sh]
+    B -->|Enhanced| D[./run-enhanced-queueit-test.sh]
     
-    F --> G[VU 1 Starts]
-    F --> H[VU 2 Starts]
-    F --> I[VU N Starts]
+    C --> E[Launch 10 Tasks]
+    D --> F[Launch Configurable Tasks]
     
-    G --> J[Generate HTTP Request]
-    H --> K[Generate HTTP Request]
-    I --> L[Generate HTTP Request]
+    E --> G[Each Task: 1 VU, 60s duration]
+    F --> H[Each Task: 1 VU, configurable duration]
     
-    J --> M[Network Stack]
-    K --> M
-    L --> M
+    G --> I[Fargate Starts Container]
+    H --> I
+    I --> J[Docker Image: grafana/k6:latest]
+    J --> K[Container Entry Point]
+    K --> L[k6 run queueit-test.js]
     
-    M --> N[Container Network Interface]
-    N --> O[Public IP: 3.x.x.x]
-    O --> P[Internet Gateway]
-    P --> Q[Internet]
-    Q --> R[Target Application]
+    L --> M[Set Environment Variables]
+    M --> N[TARGET_URL=https://affluenceit.com]
+    M --> O[TEST_SCRIPT=queueit-test.js]
+    M --> P[AWS_REGION=us-east-1]
     
-    R --> S[Response Received]
-    S --> T[K6 Processes Response]
-    T --> U[Update Metrics]
-    U --> V[Log Results]
-    V --> W[Continue Test Loop]
+    P --> Q[Load Test Script]
+    Q --> R[Test Configuration Applied]
+    R --> S[VU Initialized]
+    
+    S --> T[VU Generates Requests]
+    T --> U[Request to Target Application]
+    U --> V[QueueIt Integration Check]
+    V --> W[Response Processing]
+    W --> X[Update Metrics]
+    X --> Y[Continue Test Loop]
+    
+    Y --> Z[Duration Reached]
+    Z --> AA[Generate Results]
+    AA --> BB[Upload to S3]
+    BB --> CC[Container Stops]
     
     style A fill:#e1f5fe
-    style R fill:#fff3e0
-    style W fill:#c8e6c9
+    style V fill:#fff3e0
+    style CC fill:#c8e6c9
 ```
 
-**Detailed Execution Steps**:
-
-1. **Container Initialization**
-   ```dockerfile
-   # Container startup
-   CMD ["/scripts/run-k6-with-upload.sh"]
-   ```
-
-2. **K6 Script Execution**
-   ```javascript
-   // Load test script
-   export default function () {
-     const response = http.get('https://affluenceit.com/', {
-       insecureSkipTLSVerify: true
-     });
-   }
-   ```
-
-3. **VU Execution**
-   - **Concurrent VUs**: Multiple virtual users run simultaneously
-   - **Request Generation**: Each VU generates HTTP requests
-   - **Shared Network**: All VUs use container's network interface
-
-4. **Network Processing**
-   - **Container Level**: All VUs share container's public IP
-   - **Request Routing**: Through VPC → Internet Gateway → Internet
-   - **Response Handling**: Back through same path
-
-### **3. Results Processing Flow**
+### **3. QueueIt Integration Flow**
 
 ```mermaid
 flowchart TD
-    A[Test Completes] --> B[K6 Generates Results]
-    B --> C[Local JSON Files]
-    C --> D[Upload Script Triggers]
-    D --> E[AWS CLI Uploads to S3]
-    
-    E --> F[S3 Bucket Storage]
-    F --> G[Organized by Test Type]
-    G --> H[Timestamped Folders]
-    H --> I[Results.json]
-    H --> J[Test-summary.json]
-    H --> K[K6.log]
-    
-    B --> L[CloudWatch Logs]
-    L --> M[Real-time Log Stream]
-    M --> N[Log Group: /ecs/k6-load-test]
-    
-    B --> O[CloudWatch Metrics]
-    O --> P[ECS Service Metrics]
-    P --> Q[CPU Utilization]
-    P --> R[Memory Utilization]
-    
-    F --> S[Download Script]
-    S --> T[Local Analysis]
-    T --> U[Performance Reports]
-    
-    style A fill:#e1f5fe
-    style F fill:#c8e6c9
-    style U fill:#fff3e0
-```
-
-**Results Processing Steps**:
-
-1. **Local Result Generation**
-   ```javascript
-   // K6 outputs results locally
-   export const options = {
-     // ... test configuration
-   };
-   
-   export function teardown(data) {
-     // Results available in /results/results.json
-   }
-   ```
-
-2. **S3 Upload Process**
-   ```bash
-   # Upload script execution
-   /scripts/upload-to-s3.sh
-   
-   # Uploads to organized structure
-   s3://bucket/test-results/basic/20240706-143022/
-   ```
-
-3. **CloudWatch Integration**
-   ```terraform
-   logConfiguration = {
-     logDriver = "awslogs"
-     options = {
-       awslogs-group         = aws_cloudwatch_log_group.k6_logs.name
-       awslogs-region        = var.aws_region
-       awslogs-stream-prefix = "k6"
-     }
-   }
-   ```
-
----
-
-## 📊 Data Flow Architecture
-
-### **Complete Data Flow Diagram**
-
-```mermaid
-flowchart TD
-    subgraph "User Interface"
-        A[Deploy Script] --> B[Terraform Apply]
-        B --> C[Infrastructure Created]
+    subgraph "Test Configuration"
+        A[config/test-config.json] --> B[Target Configuration]
+        B --> C[base_url: https://affluenceit.com]
+        B --> D[endpoints.queueit_protected: /owners/new]
+        B --> E[endpoints.queueit_health: /integration/queueit/health]
+        B --> F[endpoints.public: /]
     end
     
-    subgraph "AWS Infrastructure"
-        C --> D[VPC Created]
-        C --> E[ECS Cluster Created]
-        C --> F[S3 Bucket Created]
-        C --> G[CloudWatch Logs Created]
+    subgraph "K6 Test Script"
+        G[k6-scripts/queueit-test.js] --> H[Load Test Configuration]
+        H --> I[Test Multiple Endpoints]
+        I --> J[Protected Route Test]
+        I --> K[Health Check Test]
+        I --> L[Public Route Test]
     end
     
-    subgraph "Container Execution"
-        H[Docker Build] --> I[ECR Push]
-        I --> J[ECS Task Definition]
-        J --> K[Fargate Task Execution]
-        K --> L[K6 Container Starts]
+    subgraph "Protected Route Testing"
+        J --> M[Request to /owners/new]
+        M --> N[QueueIt Filter Intercepts]
+        N --> O{User Has Valid Token?}
+        O -->|No| P[302 Redirect to QueueIt]
+        O -->|Yes| Q[200 OK - Allow Access]
+        
+        P --> R[Location: https://futuraforge.queue-it.net/]
+        Q --> S[Access Granted]
     end
     
-    subgraph "Network Flow"
-        L --> M[Private IP Assigned]
-        M --> N[Public IP Assigned]
-        N --> O[Internet Gateway]
-        O --> P[Target Application]
-        P --> Q[Response Back]
+    subgraph "Health Check Testing"
+        K --> T[Request to /integration/queueit/health]
+        T --> U[QueueIt Health Endpoint]
+        U --> V[200 OK - Service Healthy]
     end
     
-    subgraph "Results Processing"
-        L --> R[Test Results Generated]
-        R --> S[Local JSON Files]
-        S --> T[S3 Upload]
-        T --> U[CloudWatch Logs]
-        U --> V[CloudWatch Metrics]
+    subgraph "Public Route Testing"
+        L --> W[Request to /]
+        W --> X[No QueueIt Filter]
+        X --> Y[200 OK - Public Access]
     end
     
-    subgraph "Monitoring & Analysis"
-        V --> W[CloudWatch Dashboard]
-        T --> X[S3 Download Script]
-        X --> Y[Local Analysis]
-        Y --> Z[Performance Reports]
+    subgraph "Response Analysis"
+        R --> Z[K6 Processes 302]
+        S --> AA[K6 Processes 200]
+        V --> BB[K6 Processes 200]
+        Y --> CC[K6 Processes 200]
+        
+        Z --> DD[Update Redirect Metrics]
+        AA --> EE[Update Success Metrics]
+        BB --> FF[Update Health Metrics]
+        CC --> GG[Update Public Metrics]
     end
     
     style A fill:#e1f5fe
     style P fill:#fff3e0
-    style Z fill:#c8e6c9
+    style GG fill:#c8e6c9
 ```
 
-### **Data Flow Components**
+---
 
-1. **Input Data**
-   - **Terraform Configuration**: Infrastructure as code
-   - **K6 Test Scripts**: Load testing scenarios
-   - **Environment Variables**: Target URLs, test parameters
+## 🌐 IP Diversity Assignment Flow
 
-2. **Processing Data**
-   - **Container Execution**: K6 test execution
-   - **Network Traffic**: HTTP requests/responses
-   - **Metrics Collection**: Performance data
+### **Multiple Tasks IP Assignment Flow**
 
-3. **Output Data**
-   - **S3 Results**: JSON files, logs, summaries
-   - **CloudWatch Logs**: Real-time application logs
-   - **CloudWatch Metrics**: Performance metrics
-   - **CloudWatch Dashboard**: Visual monitoring
+```mermaid
+flowchart TD
+    subgraph "Task Launch"
+        A[./run-10-vu-tasks.sh] --> B[Loop: 1 to 10]
+        B --> C[aws ecs run-task]
+        C --> D[ECS Scheduler]
+    end
+    
+    subgraph "Resource Allocation"
+        D --> E[Fargate Platform]
+        E --> F[Allocate CPU: 256 units]
+        E --> G[Allocate Memory: 512 MiB]
+        E --> H[Allocate Network: awsvpc mode]
+    end
+    
+    subgraph "Network Interface Creation"
+        H --> I[Create ENI in VPC]
+        I --> J[Assign Private IP from Subnet]
+        J --> K[10.0.1.x from subnet-097cbe067e542243a]
+    end
+    
+    subgraph "Public IP Assignment"
+        K --> L[Public Subnet Configuration]
+        L --> M[map_public_ip_on_launch = true]
+        M --> N[Auto-assign Public IP]
+        N --> O[3.x.x.x from AWS IP Pool]
+    end
+    
+    subgraph "IP Diversity Result"
+        O --> P[Task 1: 3.x.x.1]
+        O --> Q[Task 2: 3.x.x.2]
+        O --> R[Task 3: 3.x.x.3]
+        O --> S[...]
+        O --> T[Task 10: 3.x.x.10]
+    end
+    
+    subgraph "Task Ready"
+        P --> U[Each Task Has Unique IP]
+        Q --> U
+        R --> U
+        S --> U
+        T --> U
+        U --> V[Natural IP Diversity Achieved]
+    end
+    
+    style A fill:#e1f5fe
+    style V fill:#c8e6c9
+```
+
+---
+
+## 🎯 QueueIt Integration Flow
+
+### **QueueIt Integration Testing Flow**
+
+```mermaid
+flowchart TD
+    subgraph "Test Configuration"
+        A[config/test-config.json] --> B[Target Configuration]
+        B --> C[base_url: https://affluenceit.com]
+        B --> D[endpoints.queueit_protected: /owners/new]
+        B --> E[endpoints.queueit_health: /integration/queueit/health]
+        B --> F[endpoints.public: /]
+    end
+    
+    subgraph "K6 Test Script"
+        G[k6-scripts/queueit-test.js] --> H[Load Test Configuration]
+        H --> I[Test Multiple Endpoints]
+        I --> J[Protected Route Test]
+        I --> K[Health Check Test]
+        I --> L[Public Route Test]
+    end
+    
+    subgraph "Protected Route Testing"
+        J --> M[Request to /owners/new]
+        M --> N[QueueIt Filter Intercepts]
+        N --> O{User Has Valid Token?}
+        O -->|No| P[302 Redirect to QueueIt]
+        O -->|Yes| Q[200 OK - Allow Access]
+        
+        P --> R[Location: https://futuraforge.queue-it.net/]
+        Q --> S[Access Granted]
+    end
+    
+    subgraph "Response Analysis"
+        R --> T[K6 Processes 302]
+        S --> U[K6 Processes 200]
+        T --> V[Update Redirect Metrics]
+        U --> W[Update Success Metrics]
+    end
+```
+
+---
+
+## 📊 Results Processing Flow
+
+### **Complete Results Processing Flow**
+
+```mermaid
+flowchart TD
+    subgraph "Test Completion"
+        A[K6 Test Finishes] --> B[Generate Results Files]
+        B --> C[Test Metrics]
+        B --> D[QueueIt Redirect Data]
+        B --> E[Performance Data]
+    end
+    
+    subgraph "Local Processing"
+        C --> F[Upload Script Triggers]
+        D --> F
+        E --> F
+        F --> G[Enhanced Test: S3 Upload]
+        F --> H[Simple Test: CloudWatch Only]
+    end
+    
+    subgraph "S3 Upload Process"
+        G --> I[Create S3 Path]
+        I --> J[s3://k6-load-test-results-786407478307/test-results/20250709-114704/]
+        J --> K[Upload results.json]
+        J --> L[Upload test-summary.json]
+        J --> M[Upload k6.log]
+    end
+    
+    subgraph "CloudWatch Integration"
+        A --> N[Real-time Log Stream]
+        N --> O[CloudWatch Logs]
+        O --> P[/ecs/k6-single-vu-task]
+        
+        A --> Q[Performance Metrics]
+        Q --> R[ECS Service Metrics]
+        R --> S[CPU Utilization]
+        R --> T[Memory Utilization]
+    end
+    
+    subgraph "Monitoring & Analysis"
+        S --> U[CloudWatch Dashboard]
+        T --> U
+        P --> U
+        
+        K --> V[Download Script]
+        L --> V
+        M --> V
+        V --> W[Local Analysis]
+        W --> X[Performance Reports]
+        W --> Y[QueueIt Integration Analysis]
+    end
+    
+    style A fill:#e1f5fe
+    style Y fill:#c8e6c9
+```
+
+---
+
+## 🌐 Data Flow Architecture
+
+### **Complete Data Flow**
+
+```mermaid
+flowchart TD
+    subgraph "Data Generation"
+        A[K6 Test Execution] --> B[Generate Metrics]
+        A --> C[Generate Logs]
+        A --> D[Generate Results]
+        A --> E[QueueIt Integration Data]
+    end
+    
+    subgraph "Local Storage"
+        B --> F[/results/results.json]
+        C --> G[/results/k6.log]
+        D --> H[/results/test-summary.json]
+        E --> I[/results/queueit-analysis.json]
+    end
+    
+    subgraph "S3 Storage"
+        F --> J[S3 Upload Script]
+        G --> J
+        H --> J
+        I --> J
+        J --> K[S3 Bucket]
+        K --> L[Organized Structure]
+        L --> M[s3://k6-load-test-results-786407478307/test-results/20250709-114704/]
+    end
+    
+    subgraph "CloudWatch Storage"
+        A --> N[Real-time Log Stream]
+        N --> O[CloudWatch Logs]
+        O --> P[/ecs/k6-single-vu-task]
+        
+        A --> Q[Performance Metrics]
+        Q --> R[CloudWatch Metrics]
+        R --> S[ECS Service Metrics]
+    end
+    
+    subgraph "Data Access"
+        M --> T[Download Script]
+        T --> U[Local Analysis]
+        U --> V[Performance Reports]
+        U --> W[QueueIt Integration Reports]
+        
+        P --> X[CloudWatch Dashboard]
+        S --> X
+    end
+    
+    style A fill:#e1f5fe
+    style W fill:#c8e6c9
+    style X fill:#fff3e0
+```
 
 ---
 
 ## 🔒 Security Architecture
 
-### **Security Layers**
+### **Security Components**
 
 ```mermaid
 flowchart TD
-    A[ECS Task] --> B[IAM Roles]
-    B --> C[Task Role]
-    B --> D[Execution Role]
+    subgraph "Network Security"
+        A[VPC Isolation] --> B[Private Subnets]
+        A --> C[Public Subnets]
+        A --> D[Security Groups]
+        A --> E[Network ACLs]
+    end
     
-    A --> E[Network Security]
-    E --> F[Security Groups]
-    E --> G[VPC Isolation]
+    subgraph "Access Control"
+        F[IAM Roles] --> G[Task Execution Role]
+        F --> H[Task Role]
+        F --> I[User Permissions]
+    end
     
-    A --> H[Data Security]
-    H --> I[S3 Bucket Policy]
-    H --> J[CloudWatch Encryption]
+    subgraph "Data Security"
+        J[S3 Encryption] --> K[Server-Side Encryption]
+        J --> L[Access Logging]
+        J --> M[Versioning]
+    end
     
-    A --> K[Container Security]
-    K --> L[Non-root User]
-    K --> M[Read-only Filesystem]
-    K --> N[Resource Limits]
-    
-    style A fill:#e1f5fe
-    style B fill:#fff3e0
-    style H fill:#c8e6c9
+    subgraph "Monitoring Security"
+        N[CloudWatch Logs] --> O[Log Encryption]
+        N --> P[Access Monitoring]
+        N --> Q[Audit Trail]
+    end
 ```
 
-### **Security Components**
+### **Security Best Practices**
 
-1. **IAM Security**
-   ```terraform
-   # Task Role - Minimal permissions
-   resource "aws_iam_role" "ecs_task_role" {
-     # Permissions for S3 upload, CloudWatch logs
-   }
-   
-   # Execution Role - Container startup permissions
-   resource "aws_iam_role" "ecs_execution_role" {
-     # Permissions for ECR pull, CloudWatch logs
-   }
-   ```
+1. **Network Security**
+   - VPC isolation for all resources
+   - Security groups with minimal required access
+   - Public subnets only for outbound internet access
 
-2. **Network Security**
-   ```terraform
-   # Security Group - Minimal required access
-   resource "aws_security_group" "k6_sg" {
-     egress {
-       from_port   = 0
-       to_port     = 0
-       protocol    = "-1"
-       cidr_blocks = ["0.0.0.0/0"]
-     }
-   }
-   ```
+2. **IAM Security**
+   - Least privilege principle for all roles
+   - Task execution role for ECS
+   - Task role for application permissions
 
 3. **Data Security**
-   ```terraform
-   # S3 Bucket Policy - Restrictive access
-   resource "aws_s3_bucket_policy" "k6_results_policy" {
-     # Only ECS task role can access
-   }
-   ```
+   - S3 bucket encryption at rest
+   - CloudWatch logs encryption
+   - Secure credential management
+
+4. **Monitoring Security**
+   - Comprehensive logging
+   - Access monitoring
+   - Security event alerting
 
 ---
 
@@ -478,56 +636,45 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Load Test Request] --> B[Multiple ECS Tasks]
-    B --> C[Task 1: 10 VUs]
-    B --> D[Task 2: 10 VUs]
-    B --> E[Task 3: 10 VUs]
-    B --> F[Task N: 10 VUs]
+    A[Load Test Requirements] --> B{Scale Type?}
+    B -->|More IPs| C[Increase Task Count]
+    B -->|More VUs| D[Increase VUs per Task]
+    B -->|Geographic| E[Multi-Region Deployment]
     
-    C --> G[IP 1: 3.1.1.1]
-    D --> H[IP 2: 3.1.1.2]
-    E --> I[IP 3: 3.1.1.3]
-    F --> J[IP N: 3.1.1.N]
+    C --> F[Launch More ECS Tasks]
+    D --> G[Modify Task Definition]
+    E --> H[Deploy to Multiple Regions]
     
-    G --> K[Target Application]
-    H --> K
-    I --> K
-    J --> K
+    F --> I[More Unique IPs]
+    G --> J[Higher Load per IP]
+    H --> K[Geographic Distribution]
     
-    style A fill:#e1f5fe
-    style K fill:#fff3e0
-    style B fill:#c8e6c9
+    I --> L[Enhanced IP Diversity]
+    J --> M[Higher Throughput]
+    K --> N[Regional Testing]
 ```
 
 ### **Scaling Strategies**
 
-1. **Task-Level Scaling**
-   ```bash
-   # Scale by running multiple tasks
-   for i in {1..10}; do
-     aws ecs run-task --cluster k6-cluster --task-definition k6-task
-   done
-   ```
+1. **IP Diversity Scaling**
+   - Increase number of ECS tasks
+   - Each task provides unique IP
+   - Natural scaling with AWS infrastructure
 
-2. **Resource Scaling**
-   ```terraform
-   # Adjust CPU/Memory per task
-   variable "task_cpu" {
-     default = 2048  # 2 vCPU
-   }
-   
-   variable "task_memory" {
-     default = 4096  # 4GB RAM
-   }
-   ```
+2. **Load Scaling**
+   - Increase VUs per task
+   - Modify task CPU/memory allocation
+   - Optimize for specific load patterns
 
 3. **Geographic Scaling**
-   ```bash
-   # Multi-region deployment
-   aws ecs run-task --cluster k6-cluster-us-east-1
-   aws ecs run-task --cluster k6-cluster-us-west-2
-   aws ecs run-task --cluster k6-cluster-eu-west-1
-   ```
+   - Multi-region deployment
+   - Regional IP diversity
+   - Geographic performance testing
+
+4. **Cost Optimization**
+   - Right-size task resources
+   - Optimize test duration
+   - Use spot instances for non-critical tests
 
 ---
 
@@ -537,141 +684,189 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[K6 Container] --> B[CloudWatch Logs]
-    A --> C[CloudWatch Metrics]
-    A --> D[S3 Results]
+    subgraph "Data Sources"
+        A[K6 Container] --> B[Application Logs]
+        A --> C[Performance Metrics]
+        A --> D[Test Results]
+        A --> E[QueueIt Integration Data]
+    end
     
-    B --> E[Real-time Log Stream]
-    C --> F[ECS Service Metrics]
-    D --> G[Persistent Storage]
+    subgraph "CloudWatch Integration"
+        B --> F[CloudWatch Logs]
+        C --> G[CloudWatch Metrics]
+        D --> H[S3 Storage]
+        E --> I[QueueIt Metrics]
+        
+        F --> J[Real-time Log Stream]
+        G --> K[ECS Service Metrics]
+        H --> L[Persistent Storage]
+        I --> M[QueueIt Dashboard]
+    end
     
-    E --> H[CloudWatch Dashboard]
-    F --> H
-    G --> I[Download Script]
+    subgraph "Monitoring Components"
+        J --> N[CloudWatch Dashboard]
+        K --> N
+        L --> O[Download Script]
+        M --> P[QueueIt Integration Dashboard]
+        
+        N --> Q[Real-time Monitoring]
+        O --> R[Offline Analysis]
+        P --> S[QueueIt Performance]
+    end
     
-    H --> J[Performance Monitoring]
-    I --> K[Offline Analysis]
+    subgraph "Alerting & Analysis"
+        Q --> T[Performance Alerts]
+        R --> U[Performance Reports]
+        S --> V[QueueIt Integration Reports]
+        
+        T --> W[Email Notifications]
+        U --> X[Trend Analysis]
+        V --> Y[QueueIt Health Monitoring]
+    end
     
     style A fill:#e1f5fe
-    style H fill:#c8e6c9
-    style K fill:#fff3e0
+    style Q fill:#c8e6c9
+    style Y fill:#fff3e0
 ```
 
-### **Monitoring Components**
+### **Key Metrics**
 
-1. **Real-time Monitoring**
-   ```bash
-   # CloudWatch logs tail
-   aws logs tail /ecs/k6-load-test --follow
-   ```
+1. **Performance Metrics**
+   - CPU and memory utilization
+   - Network throughput
+   - Response times
+   - Error rates
 
-2. **Metrics Dashboard**
-   ```terraform
-   resource "aws_cloudwatch_dashboard" "k6_dashboard" {
-     dashboard_body = jsonencode({
-       widgets = [
-         {
-           type = "metric"
-           properties = {
-             metrics = [
-               ["AWS/ECS", "CPUUtilization"],
-               ["AWS/ECS", "MemoryUtilization"]
-             ]
-           }
-         }
-       ]
-     })
-   }
-   ```
+2. **QueueIt Integration Metrics**
+   - 302 redirect rates
+   - Health check status
+   - Queue entry success rates
+   - Integration error rates
 
-3. **Results Analysis**
-   ```bash
-   # Download and analyze results
-   ./scripts/download-results.sh latest basic
-   ```
+3. **IP Diversity Metrics**
+   - Unique IP count
+   - IP distribution
+   - Geographic distribution
+   - IP rotation success
+
+4. **Business Metrics**
+   - Test completion rates
+   - Queue management effectiveness
+   - User experience simulation
+   - Load balancer performance
 
 ---
 
 ## 💰 Cost Optimization
 
-### **Cost Breakdown**
+### **Cost Structure**
 
 ```mermaid
 flowchart TD
-    A[Load Test Execution] --> B[Fargate Costs]
-    A --> C[Data Transfer Costs]
+    A[Cost Components] --> B[Compute Costs]
+    A --> C[Network Costs]
     A --> D[Storage Costs]
     A --> E[Monitoring Costs]
     
-    B --> F[CPU: $0.04048/hour]
-    B --> G[Memory: $0.004445/hour]
-    C --> H[Outbound: $0.09/GB]
-    D --> I[S3: $0.023/GB/month]
-    E --> J[CloudWatch: $0.50/GB]
+    B --> F[Fargate Task Hours]
+    C --> G[Data Transfer]
+    D --> H[S3 Storage]
+    E --> I[CloudWatch Logs]
     
-    F --> K[Total Cost per Hour]
-    G --> K
-    H --> K
-    I --> K
-    J --> K
-    
-    style A fill:#e1f5fe
-    style K fill:#c8e6c9
+    F --> J[CPU/Memory Allocation]
+    G --> K[Outbound Data]
+    H --> L[Result Storage]
+    I --> M[Log Retention]
 ```
 
 ### **Cost Optimization Strategies**
 
-1. **Resource Optimization**
-   ```terraform
-   # Right-size CPU/Memory
-   variable "task_cpu" {
-     default = 1024  # 1 vCPU - sufficient for most tests
-   }
-   
-   variable "task_memory" {
-     default = 2048  # 2GB RAM - optimal for k6
-   }
-   ```
+1. **Compute Optimization**
+   - Right-size task resources (256 CPU, 512 MB memory)
+   - Optimize test duration
+   - Use spot instances for non-critical tests
 
-2. **Execution Optimization**
-   ```bash
-   # Run tests only when needed
-   aws ecs run-task --cluster k6-cluster --task-definition k6-task
-   # Stop when complete - no idle costs
-   ```
+2. **Network Optimization**
+   - Minimize data transfer
+   - Optimize test frequency
+   - Use efficient protocols
 
 3. **Storage Optimization**
-   ```terraform
-   # CloudWatch log retention
-   resource "aws_cloudwatch_log_group" "k6_logs" {
-     retention_in_days = 7  # Reduce storage costs
-   }
-   ```
+   - Implement log retention policies
+   - Compress result files
+   - Clean up old test results
+
+4. **Monitoring Optimization**
+   - Configure appropriate log retention
+   - Use sampling for high-volume logs
+   - Optimize metric collection
+
+### **Cost Estimation**
+
+| Component | **Cost Factor** | **Estimated Cost** |
+|-----------|----------------|-------------------|
+| **Fargate Tasks** | $0.04048 per vCPU per hour | $0.01 per task hour |
+| **Memory** | $0.004445 per GB per hour | $0.002 per task hour |
+| **S3 Storage** | $0.023 per GB per month | $0.01 per test |
+| **CloudWatch Logs** | $0.50 per GB ingested | $0.05 per test |
+| **Data Transfer** | $0.09 per GB | $0.01 per test |
+
+**Total Estimated Cost**: ~$0.15 per test run (10 tasks, 1 hour)
 
 ---
 
 ## 🎯 Summary
 
-This solution architecture provides:
+### **Architecture Benefits**
 
-### **Key Benefits**
-- ✅ **Serverless**: No server management required
-- ✅ **Scalable**: Handle varying load testing requirements
-- ✅ **Cost-effective**: Pay only for actual execution
-- ✅ **Secure**: Comprehensive security controls
-- ✅ **Observable**: Real-time monitoring and logging
+1. **Serverless Design**
+   - No server management required
+   - Automatic scaling and resource allocation
+   - Pay-per-use pricing model
 
-### **Technical Highlights**
-- **Fargate**: Serverless compute for container execution
-- **VPC Integration**: Direct network access with public IPs
-- **S3 Storage**: Persistent, organized result storage
-- **CloudWatch**: Real-time monitoring and metrics
-- **IAM Security**: Minimal required permissions
+2. **IP Diversity**
+   - Natural IP diversity through multiple tasks
+   - Each task gets unique AWS public IP
+   - Excellent for QueueIt integration testing
 
-### **Operational Excellence**
-- **Infrastructure as Code**: Terraform for reproducible deployments
-- **Automated Results**: S3 upload and CloudWatch integration
-- **Easy Monitoring**: Dashboard and log access
-- **Cost Control**: Resource optimization and usage-based pricing
+3. **QueueIt Integration**
+   - Comprehensive queue management testing
+   - Independent user sessions per IP
+   - Realistic user behavior simulation
 
-This architecture delivers a production-ready, scalable load testing solution that leverages AWS best practices and serverless technologies for optimal performance and cost efficiency. 
+4. **Scalability**
+   - Horizontal scaling through task multiplication
+   - Vertical scaling through resource allocation
+   - Geographic scaling through multi-region deployment
+
+5. **Monitoring**
+   - Real-time metrics and logging
+   - Comprehensive dashboard integration
+   - Automated alerting and reporting
+
+### **Key Components**
+
+- **ECS Fargate**: Serverless compute for k6 containers
+- **VPC Network**: Isolated network with public IP assignment
+- **S3 Storage**: Persistent storage for test results
+- **CloudWatch**: Real-time monitoring and logging
+- **QueueIt Integration**: Queue management testing capabilities
+
+### **Future Enhancements**
+
+1. **Advanced IP Rotation**
+   - Container-level IP rotation
+   - Proxy-based IP diversity
+   - Geographic IP distribution
+
+2. **Enhanced Monitoring**
+   - Advanced dashboards
+   - Machine learning insights
+   - Predictive analytics
+
+3. **Integration Capabilities**
+   - CI/CD pipeline integration
+   - API-based test execution
+   - Multi-cloud support
+
+This architecture provides a robust, scalable, and cost-effective solution for load testing with IP diversity and QueueIt integration! 🚀 

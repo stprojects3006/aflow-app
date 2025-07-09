@@ -1,43 +1,44 @@
-# 🔄 IP Rotation: Detailed Guide
+# 🔄 IP Diversity: Detailed Guide
 
 ## 📋 Table of Contents
 
-1. [What is IP Rotation?](#what-is-ip-rotation)
-2. [Why IP Rotation Matters](#why-ip-rotation-matters)
-3. [IP Rotation Methods](#ip-rotation-methods)
-4. [Current Project IP Assignment](#current-project-ip-assignment)
-5. [IP Rotation vs IP Diversity](#ip-rotation-vs-ip-diversity)
+1. [What is IP Diversity?](#what-is-ip-diversity)
+2. [Why IP Diversity Matters](#why-ip-diversity-matters)
+3. [IP Diversity Methods](#ip-diversity-methods)
+4. [Current Project Implementation](#current-project-implementation)
+5. [IP Diversity vs IP Rotation](#ip-diversity-vs-ip-rotation)
 6. [Technical Implementation](#technical-implementation)
-7. [Proxy-Based IP Rotation](#proxy-based-ip-rotation)
-8. [AWS-Based IP Rotation](#aws-based-ip-rotation)
-9. [Container-Level IP Rotation](#container-level-ip-rotation)
+7. [QueueIt Integration](#queueit-integration)
+8. [AWS-Based IP Diversity](#aws-based-ip-diversity)
+9. [Future: Container-Level IP Rotation](#future-container-level-ip-rotation)
 10. [Real-World Examples](#real-world-examples)
 11. [Challenges and Limitations](#challenges-and-limitations)
 12. [Best Practices](#best-practices)
 
 ---
 
-## 🎯 What is IP Rotation?
+## 🎯 What is IP Diversity?
 
-**IP Rotation** is a technique where different IP addresses are used for outgoing requests, either automatically or manually, to simulate traffic from multiple sources.
+**IP Diversity** is a technique where different IP addresses are used for outgoing requests by deploying multiple containers or tasks, each with its own unique public IP address.
 
 ### **Key Concepts**
 
-- **Dynamic IP Assignment**: IPs change during test execution
-- **Geographic Distribution**: IPs from different locations
+- **Static IP Assignment**: Each container gets a unique IP
+- **Natural Distribution**: IPs from AWS IP pools
 - **Load Distribution**: Spread requests across multiple IPs
 - **Rate Limit Bypass**: Avoid per-IP rate limiting
+- **QueueIt Integration**: Test queue management with diverse IPs
 
 ---
 
-## 🔍 Why IP Rotation Matters
+## 🔍 Why IP Diversity Matters
 
 ### **Load Testing Scenarios**
 
-| Scenario | **Without IP Rotation** | **With IP Rotation** |
+| Scenario | **Without IP Diversity** | **With IP Diversity** |
 |----------|------------------------|---------------------|
 | **Rate Limiting** | ❌ Single IP hits limits quickly | ✅ Multiple IPs bypass limits |
-| **Geographic Testing** | ❌ All requests from one location | ✅ Requests from multiple regions |
+| **QueueIt Testing** | ❌ Limited queue entry points | ✅ Multiple independent sessions |
 | **Load Balancer Testing** | ❌ Limited IP diversity | ✅ Tests load balancer with diverse IPs |
 | **Security Testing** | ❌ Easy to detect single source | ✅ Harder to detect automated traffic |
 | **Realistic Simulation** | ❌ Unrealistic traffic pattern | ✅ Mimics real user behavior |
@@ -47,13 +48,43 @@
 1. **More Realistic Testing**: Simulates actual user behavior
 2. **Better Performance Data**: Tests how systems handle diverse traffic
 3. **Comprehensive Coverage**: Tests rate limiting and security measures
-4. **Geographic Distribution**: Tests CDN and regional performance
+4. **QueueIt Integration**: Tests queue management systems effectively
+5. **Cost Effective**: Zero additional cost for IP diversity
 
 ---
 
-## 🔄 IP Rotation Methods
+## 🔄 IP Diversity Methods
 
-### **Method 1: Proxy-Based Rotation**
+### **Method 1: Multiple ECS Tasks (Current)**
+
+```mermaid
+flowchart TD
+    A[Multiple ECS Tasks] --> B[Task 1: IP 3.1.1.1]
+    A --> C[Task 2: IP 3.1.1.2]
+    A --> D[Task 3: IP 3.1.1.3]
+    A --> E[Task 10: IP 3.1.1.10]
+    
+    B --> F[VU 1: Request to QueueIt]
+    C --> G[VU 1: Request to QueueIt]
+    D --> H[VU 1: Request to QueueIt]
+    E --> I[VU 1: Request to QueueIt]
+    
+    F --> J[QueueIt Filter]
+    G --> J
+    H --> J
+    I --> J
+    
+    J --> K[302 Redirect or 200 OK]
+    K --> L[K6 Processes Response]
+```
+
+**How it works:**
+- Each ECS task gets a unique public IP
+- AWS automatically assigns different IPs
+- Natural IP diversity without external services
+- Each task represents independent user session
+
+### **Method 2: Future - Proxy-Based Rotation**
 
 ```mermaid
 flowchart TD
@@ -74,26 +105,9 @@ flowchart TD
 - Each VU uses a different proxy endpoint
 - Proxies have different public IPs
 - Requests appear to come from different sources
+- More complex but higher IP diversity
 
-### **Method 2: AWS-Based Rotation**
-
-```mermaid
-flowchart TD
-    A[Multiple ECS Tasks] --> B[Task 1: IP 3.1.1.1]
-    A --> C[Task 2: IP 3.1.1.2]
-    A --> D[Task 3: IP 3.1.1.3]
-    
-    B --> E[Target Application]
-    C --> E
-    D --> E
-```
-
-**How it works:**
-- Each ECS task gets a unique public IP
-- AWS automatically assigns different IPs
-- Natural IP diversity without external services
-
-### **Method 3: Container-Level Rotation**
+### **Method 3: Future - Container-Level Rotation**
 
 ```mermaid
 flowchart TD
@@ -114,54 +128,103 @@ flowchart TD
 - Single container rotates IPs dynamically
 - Uses proxy services or VPN endpoints
 - Changes IP during test execution
+- Highest complexity but maximum flexibility
 
 ---
 
-## 🌐 Current Project IP Assignment
+## 🌐 Current Project Implementation
 
 ### **How Our Project Currently Works**
 
 ```mermaid
 flowchart TD
-    A[Deploy ECS Task] --> B[Fargate Allocates Resources]
-    B --> C[VPC Assigns Private IP: 10.0.1.x]
-    C --> D[Public Subnet Assigns Public IP: 3.x.x.x]
-    D --> E[All VUs Use Same Public IP]
+    A[./run-10-vu-tasks.sh] --> B[Launch 10 ECS Tasks]
+    B --> C[Each Task Gets Unique IP]
+    C --> D[Task 1: IP 3.x.x.1]
+    C --> E[Task 2: IP 3.x.x.2]
+    C --> F[Task 3: IP 3.x.x.3]
+    C --> G[...]
+    C --> H[Task 10: IP 3.x.x.10]
     
-    F[VU 1] --> G[Container Network Interface]
-    H[VU 2] --> G
-    I[VU 3] --> G
-    G --> J[Public IP: 3.x.x.x]
-    J --> K[Target Application]
+    D --> I[VU 1: Request to /owners/new]
+    E --> J[VU 1: Request to /owners/new]
+    F --> K[VU 1: Request to /owners/new]
+    H --> L[VU 1: Request to /owners/new]
+    
+    I --> M[QueueIt Filter]
+    J --> M
+    K --> M
+    L --> M
+    
+    M --> N[302 Redirect to QueueIt]
+    N --> O[K6 Processes Response]
+    O --> P[Update Metrics]
+    P --> Q[Upload Results]
 ```
 
-### **Current Limitations**
+### **Current Implementation Details**
 
-1. **Single IP per Container**: All VUs share the same public IP
-2. **Limited Diversity**: Only as many IPs as containers
-3. **No Geographic Distribution**: All IPs from same AWS region
-4. **Static Assignment**: IPs don't change during test execution
+1. **Multiple Tasks**: Each task runs independently with 1 VU
+2. **Unique IPs**: Each task gets unique AWS public IP
+3. **QueueIt Integration**: Tests protected routes with IP diversity
+4. **Cost Effective**: Zero additional cost for IP diversity
+5. **Simple Management**: Easy to deploy and monitor
 
 ### **Current Configuration**
 
-```terraform
-# Current setup - each task gets one public IP
-resource "aws_ecs_task_definition" "k6_task" {
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  # Each task gets one public IP from AWS pool
-}
+```bash
+#!/bin/bash
+# run-10-vu-tasks.sh - Current Implementation
 
-# Multiple tasks = multiple IPs
-for i in {1..5}; do
-  aws ecs run-task --cluster k6-cluster --task-definition k6-task
+# Register task definition
+aws ecs register-task-definition \
+    --cli-input-json file://task-def-single-vu-owners.json \
+    --region us-east-1
+
+# Launch 10 tasks for IP diversity
+for i in {1..10}; do
+    aws ecs run-task \
+        --cluster k6-load-test-cluster \
+        --task-definition k6-single-vu-task \
+        --launch-type FARGATE \
+        --network-configuration "awsvpcConfiguration={subnets=[subnet-097cbe067e542243a],securityGroups=[sg-0737d6eb4011e161c],assignPublicIp=ENABLED}" \
+        --region us-east-1
 done
-# Results in 5 different public IPs
+```
+
+```json
+{
+  "family": "k6-single-vu-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::786407478307:role/k6-load-test-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::786407478307:role/k6-load-test-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "k6",
+      "image": "grafana/k6:latest",
+      "environment": [
+        {"name": "TARGET_URL", "value": "https://affluenceit.com"},
+        {"name": "TEST_SCRIPT", "value": "queueit-test.js"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/k6-single-vu-task",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "k6"
+        }
+      }
+    }
+  ]
+}
 ```
 
 ---
 
-## 🔄 IP Rotation vs IP Diversity
+## 🔄 IP Diversity vs IP Rotation
 
 ### **IP Diversity (Current Project)**
 
@@ -173,8 +236,9 @@ done
 | **Dynamic Changes** | No (IPs don't change) |
 | **Cost** | Low (no additional services) |
 | **Complexity** | Low |
+| **QueueIt Integration** | Excellent (independent sessions) |
 
-### **IP Rotation (Advanced)**
+### **IP Rotation (Future)**
 
 | Aspect | **IP Rotation Implementation** |
 |--------|------------------------------|
@@ -184,16 +248,69 @@ done
 | **Dynamic Changes** | Yes (IPs change during test) |
 | **Cost** | High (proxy services) |
 | **Complexity** | High |
+| **QueueIt Integration** | Good (but more complex) |
 
 ---
 
 ## 🛠️ Technical Implementation
 
-### **1. Proxy-Based IP Rotation**
+### **1. Current: Multiple ECS Tasks**
 
 #### **Architecture**
 ```
-K6 Container
+Multiple ECS Tasks
+├── Task 1: 1 VU → IP: 3.1.1.1
+├── Task 2: 1 VU → IP: 3.1.1.2
+├── Task 3: 1 VU → IP: 3.1.1.3
+└── Task 10: 1 VU → IP: 3.1.1.10
+```
+
+#### **Implementation**
+```bash
+#!/bin/bash
+# Deploy multiple tasks for IP diversity
+
+TASK_COUNT=10
+CLUSTER_NAME="k6-load-test-cluster"
+TASK_DEFINITION="k6-single-vu-task"
+
+for i in {1..$TASK_COUNT}; do
+    echo "Starting task $i of $TASK_COUNT"
+    
+    aws ecs run-task \
+        --cluster $CLUSTER_NAME \
+        --task-definition $TASK_DEFINITION \
+        --launch-type FARGATE \
+        --network-configuration "awsvpcConfiguration={subnets=[subnet-097cbe067e542243a],securityGroups=[sg-0737d6eb4011e161c],assignPublicIp=ENABLED}" \
+        --region us-east-1
+    
+    # Wait between task starts to avoid overwhelming
+    sleep 2
+done
+```
+
+#### **Terraform Configuration**
+```terraform
+# Multiple tasks with different IPs
+resource "aws_ecs_task_definition" "k6_task" {
+  family                   = "k6-single-vu-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  
+  # Each task gets unique resources
+  cpu    = 256
+  memory = 512
+  
+  # Each task gets unique public IP
+  # AWS automatically assigns different IPs
+}
+```
+
+### **2. Future: Proxy-Based Rotation**
+
+#### **Architecture**
+```
+K6 Container with Proxy
 ├── VU 1 → Proxy 1 → IP: 1.1.1.1
 ├── VU 2 → Proxy 2 → IP: 1.1.1.2
 ├── VU 3 → Proxy 3 → IP: 1.1.1.3
@@ -202,7 +319,7 @@ K6 Container
 
 #### **Implementation**
 ```javascript
-// k6 script with proxy rotation
+// Future: k6 script with proxy rotation
 import http from 'k6/http';
 
 const PROXY_LIST = [
@@ -217,209 +334,117 @@ export default function () {
     const proxyIndex = __VU % PROXY_LIST.length;
     const proxyUrl = PROXY_LIST[proxyIndex];
     
-    const response = http.get('https://affluenceit.com/', {
-        proxy: proxyUrl
+    const response = http.get('https://affluenceit.com/owners/new', {
+        proxy: proxyUrl,
+        redirects: 0  // Don't follow redirects for QueueIt testing
     });
 }
-```
-
-#### **Docker Configuration**
-```dockerfile
-# Dockerfile with proxy support
-FROM grafana/k6:latest
-
-# Install proxy tools
-RUN apk add --no-cache curl jq
-
-# Copy proxy configuration
-COPY proxy-config.json /scripts/
-COPY rotate-ip.sh /scripts/
-RUN chmod +x /scripts/rotate-ip.sh
-
-# Environment variables
-ENV PROXY_ENABLED=true
-ENV PROXY_SERVICE_URL=http://proxy-service:8080
-```
-
-### **2. AWS-Based IP Rotation**
-
-#### **Architecture**
-```
-Multiple ECS Tasks
-├── Task 1: 10 VUs → IP: 3.1.1.1
-├── Task 2: 10 VUs → IP: 3.1.1.2
-├── Task 3: 10 VUs → IP: 3.1.1.3
-└── Task N: 10 VUs → IP: 3.1.1.N
-```
-
-#### **Implementation**
-```bash
-#!/bin/bash
-# Deploy multiple tasks for IP diversity
-
-for i in {1..10}; do
-    aws ecs run-task \
-        --cluster k6-cluster \
-        --task-definition k6-task \
-        --launch-type FARGATE \
-        --network-configuration "awsvpcConfiguration={subnets=[subnet-123],securityGroups=[sg-123],assignPublicIp=ENABLED}"
-done
-```
-
-#### **Terraform Configuration**
-```terraform
-# Multiple tasks with different IPs
-resource "aws_ecs_task_definition" "k6_task" {
-  count = var.task_count  # Deploy multiple tasks
-  
-  family                   = "${var.project_name}-k6-task-${count.index}"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  
-  # Each task gets unique resources
-  cpu    = var.task_cpu
-  memory = var.task_memory
-}
-```
-
-### **3. Container-Level IP Rotation**
-
-#### **Architecture**
-```
-Single Container with IP Rotation
-├── VU 1 → IP: 1.1.1.1 (via proxy rotation)
-├── VU 2 → IP: 1.1.1.2 (via proxy rotation)
-├── VU 3 → IP: 1.1.1.3 (via proxy rotation)
-└── VU N → IP: 1.1.1.N (via proxy rotation)
-```
-
-#### **Implementation**
-```javascript
-// Enhanced k6 script with IP rotation
-import http from 'k6/http';
-
-// IP rotation configuration
-const IP_ROTATION_ENABLED = __ENV.IP_ROTATION_ENABLED === 'true';
-const PROXY_SERVICE_URL = __ENV.PROXY_SERVICE_URL || 'http://proxy-service:8080';
-
-// Setup function for IP rotation
-export function setup() {
-    if (IP_ROTATION_ENABLED) {
-        console.log(`Setting up IP rotation for VU ${__VU}`);
-        // Configure proxy for this VU
-        const proxyConfig = {
-            proxy: `${PROXY_SERVICE_URL}/vu/${__VU}`
-        };
-        return { proxyConfig };
-    }
-    return {};
-}
-
-// Main test function
-export default function (data) {
-    const options = {};
-    
-    if (IP_ROTATION_ENABLED && data.proxyConfig) {
-        options.proxy = data.proxyConfig.proxy;
-    }
-    
-    const response = http.get('https://affluenceit.com/', options);
-    
-    check(response, {
-        'status is 200': (r) => r.status === 200,
-        'response time < 2000ms': (r) => r.timings.duration < 2000,
-    });
-}
-```
-
-#### **IP Rotation Script**
-```bash
-#!/bin/bash
-# rotate-ip.sh
-
-# Function to rotate IP for each VU
-rotate_ip() {
-    local vu_id=$1
-    
-    # Get proxy IP from rotation service
-    PROXY_IP=$(curl -s "https://proxy-service.com/rotate?vu=$vu_id")
-    
-    # Configure proxy for this VU
-    export HTTP_PROXY="http://$PROXY_IP:8080"
-    export HTTPS_PROXY="http://$PROXY_IP:8080"
-    
-    echo "VU $vu_id using IP: $PROXY_IP"
-}
-
-# Export function for k6 to use
-export -f rotate_ip
 ```
 
 ---
 
-## 🌍 Proxy-Based IP Rotation
+## 🎯 QueueIt Integration
 
-### **How Proxy Services Work**
+### **QueueIt Integration with IP Diversity**
 
-#### **1. Rotating Proxy Services**
+```mermaid
+flowchart TD
+    subgraph "Test Configuration"
+        A[config/test-config.json] --> B[Target Configuration]
+        B --> C[base_url: https://affluenceit.com]
+        B --> D[endpoints.queueit_protected: /owners/new]
+        B --> E[endpoints.queueit_health: /integration/queueit/health]
+        B --> F[endpoints.public: /]
+    end
+    
+    subgraph "Multiple Tasks"
+        G[Task 1: IP 3.x.x.1] --> H[VU 1: Request to /owners/new]
+        I[Task 2: IP 3.x.x.2] --> J[VU 1: Request to /owners/new]
+        K[Task 3: IP 3.x.x.3] --> L[VU 1: Request to /owners/new]
+        M[Task 10: IP 3.x.x.10] --> N[VU 1: Request to /owners/new]
+    end
+    
+    subgraph "QueueIt Processing"
+        H --> O[QueueIt Filter]
+        J --> O
+        L --> O
+        N --> O
+        
+        O --> P{User Has Valid Token?}
+        P -->|No| Q[302 Redirect to QueueIt]
+        P -->|Yes| R[200 OK - Allow Access]
+        
+        Q --> S[Location: https://futuraforge.queue-it.net/]
+        R --> T[Access Granted]
+    end
+    
+    subgraph "Response Analysis"
+        S --> U[K6 Processes 302]
+        T --> V[K6 Processes 200]
+        U --> W[Update Redirect Metrics]
+        V --> X[Update Success Metrics]
+    end
 ```
-Proxy Service Architecture
-├── Proxy Pool: 1000+ IPs
-├── Geographic Distribution: Global
-├── Rotation Algorithm: Round-robin, random, or custom
-└── Authentication: API keys or credentials
-```
 
-#### **2. Popular Proxy Services**
-
-| Service | **IP Count** | **Geographic Coverage** | **Cost** | **Features** |
-|---------|--------------|------------------------|----------|--------------|
-| **Bright Data** | 72M+ IPs | 195+ countries | $500+/month | Residential, datacenter, mobile |
-| **SmartProxy** | 40M+ IPs | 195+ countries | $75+/month | Residential, datacenter |
-| **Oxylabs** | 100M+ IPs | 195+ countries | $300+/month | Residential, datacenter |
-| **ProxyMesh** | 1000+ IPs | 8 countries | $75+/month | Datacenter only |
-
-#### **3. Integration with k6**
+### **QueueIt Test Script**
 
 ```javascript
-// k6 script with Bright Data proxy
+// k6-scripts/queueit-test.js - QueueIt Integration Testing
 import http from 'k6/http';
+import { check } from 'k6';
 
-const PROXY_CONFIG = {
-    host: 'brd.superproxy.io',
-    port: 22225,
-    username: 'brd-customer-xxx-zone-xxx',
-    password: 'xxx'
-};
+const BASE_URL = __ENV.TARGET_URL || 'https://affluenceit.com';
 
 export default function () {
-    const response = http.get('https://affluenceit.com/', {
-        proxy: `http://${PROXY_CONFIG.username}:${PROXY_CONFIG.password}@${PROXY_CONFIG.host}:${PROXY_CONFIG.port}`
+    // 1. Test Protected Route (QueueIt Integration)
+    const protectedResponse = http.get(`${BASE_URL}/owners/new`, {
+        redirects: 0  // Don't follow redirects
+    });
+    
+    check(protectedResponse, {
+        'protected route returns 302': (r) => r.status === 302,
+        'redirects to queue-it': (r) => r.headers.Location && r.headers.Location.includes('queue-it'),
+    });
+    
+    // 2. Test Health Endpoint
+    const healthResponse = http.get(`${BASE_URL}/integration/queueit/health`);
+    
+    check(healthResponse, {
+        'health endpoint returns 200': (r) => r.status === 200,
+    });
+    
+    // 3. Test Public Route
+    const publicResponse = http.get(`${BASE_URL}/`);
+    
+    check(publicResponse, {
+        'public route returns 200': (r) => r.status === 200,
     });
 }
 ```
 
-### **4. VPN-Based Rotation**
+### **QueueIt Test Scenarios**
 
-```dockerfile
-# Dockerfile with VPN support
-FROM grafana/k6:latest
+1. **Protected Route Testing**
+   - Target: `/owners/new`
+   - Expected: 302 redirect to QueueIt waiting room
+   - Validation: Location header contains "queue-it"
+   - IP Diversity: Each task tests independently
 
-# Install VPN client
-RUN apk add --no-cache openvpn
+2. **Health Check Testing**
+   - Target: `/integration/queueit/health`
+   - Expected: 200 status code
+   - Validation: QueueIt service health
+   - IP Diversity: Multiple health checks from different IPs
 
-# VPN configuration
-COPY vpn-config/ /etc/openvpn/
-COPY vpn-connect.sh /scripts/
-RUN chmod +x /scripts/vpn-connect.sh
-
-# Start VPN before k6
-CMD ["/scripts/vpn-connect.sh"]
-```
+3. **Public Route Testing**
+   - Target: `/`
+   - Expected: 200 status code
+   - Validation: Public access without QueueIt
+   - IP Diversity: Baseline performance from multiple IPs
 
 ---
 
-## ☁️ AWS-Based IP Rotation
+## ☁️ AWS-Based IP Diversity
 
 ### **1. Multiple ECS Tasks**
 
@@ -429,8 +454,8 @@ CMD ["/scripts/vpn-connect.sh"]
 # Deploy multiple tasks for IP diversity
 
 TASK_COUNT=10
-CLUSTER_NAME="k6-cluster"
-TASK_DEFINITION="k6-task"
+CLUSTER_NAME="k6-load-test-cluster"
+TASK_DEFINITION="k6-single-vu-task"
 
 for i in {1..$TASK_COUNT}; do
     echo "Starting task $i of $TASK_COUNT"
@@ -439,54 +464,36 @@ for i in {1..$TASK_COUNT}; do
         --cluster $CLUSTER_NAME \
         --task-definition $TASK_DEFINITION \
         --launch-type FARGATE \
-        --network-configuration "awsvpcConfiguration={subnets=[subnet-123],securityGroups=[sg-123],assignPublicIp=ENABLED}" \
-        --overrides "{\"containerOverrides\":[{\"name\":\"k6-load-test\",\"environment\":[{\"name\":\"TASK_INDEX\",\"value\":\"$i\"}]}]}"
+        --network-configuration "awsvpcConfiguration={subnets=[subnet-097cbe067e542243a],securityGroups=[sg-0737d6eb4011e161c],assignPublicIp=ENABLED}" \
+        --region us-east-1
     
     # Wait between task starts to avoid overwhelming
-    sleep 5
+    sleep 2
 done
 ```
 
 #### **Terraform Configuration**
 ```terraform
-# Variable for task count
-variable "task_count" {
-  description = "Number of ECS tasks to run"
-  type        = number
-  default     = 5
-  validation {
-    condition     = var.task_count >= 1 && var.task_count <= 20
-    error_message = "Task count must be between 1 and 20."
-  }
-}
-
-# Multiple task definitions
+# Multiple tasks with different IPs
 resource "aws_ecs_task_definition" "k6_task" {
-  count = var.task_count
-  
-  family                   = "${var.project_name}-k6-task-${count.index}"
+  family                   = "k6-single-vu-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = var.task_cpu
-  memory                   = var.task_memory
   
-  container_definitions = jsonencode([
-    {
-      name  = "k6-load-test"
-      image = "${aws_ecr_repository.k6_repo.repository_url}:latest"
-      
-      environment = [
-        {
-          name  = "TASK_INDEX"
-          value = tostring(count.index)
-        },
-        {
-          name  = "TARGET_URL"
-          value = var.target_url
-        }
-      ]
-    }
-  ])
+  # Each task gets unique resources
+  cpu    = 256
+  memory = 512
+  
+  # Each task gets unique public IP
+  # AWS automatically assigns different IPs
+}
+
+# VPC Configuration for public IP assignment
+resource "aws_subnet" "k6_public_subnet" {
+  vpc_id                  = aws_vpc.k6_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true  # ← Enables auto-assign
 }
 ```
 
@@ -495,9 +502,9 @@ resource "aws_ecs_task_definition" "k6_task" {
 #### **Implementation**
 ```bash
 #!/bin/bash
-# Deploy to multiple regions for geographic diversity
+# Multi-region deployment for geographic IP diversity
 
-REGIONS=("us-east-1" "us-west-2" "eu-west-1" "ap-southeast-1")
+REGIONS=("us-east-1" "us-west-2" "eu-west-1")
 
 for region in "${REGIONS[@]}"; do
     echo "Deploying to region: $region"
@@ -575,13 +582,13 @@ resource "aws_route_table" "task_route_2" {
 
 ---
 
-## 🔧 Container-Level IP Rotation
+## 🔮 Future: Container-Level IP Rotation
 
 ### **1. Dynamic IP Assignment**
 
 #### **Implementation**
 ```javascript
-// k6 script with dynamic IP rotation
+// Future: k6 script with dynamic IP rotation
 import http from 'k6/http';
 
 // IP rotation configuration
@@ -609,19 +616,15 @@ export default function (data) {
         options.proxy = data.proxyConfig.proxy;
     }
     
-    const response = http.get('https://affluenceit.com/', options);
+    const response = http.get('https://affluenceit.com/owners/new', {
+        ...options,
+        redirects: 0  // Don't follow redirects for QueueIt testing
+    });
     
     check(response, {
-        'status is 200': (r) => r.status === 200,
+        'status is 200 or 302': (r) => r.status === 200 || r.status === 302,
         'response time < 2000ms': (r) => r.timings.duration < 2000,
     });
-}
-
-// Teardown function
-export function teardown(data) {
-    if (IP_ROTATION_ENABLED) {
-        console.log(`Cleaning up IP rotation for VU ${__VU}`);
-    }
 }
 ```
 
@@ -629,7 +632,7 @@ export function teardown(data) {
 
 ```bash
 #!/bin/bash
-# rotate-ip.sh
+# rotate-ip.sh (Future)
 
 # Function to rotate IP for each VU
 rotate_ip() {
@@ -652,7 +655,7 @@ export -f rotate_ip
 ### **3. Enhanced Dockerfile**
 
 ```dockerfile
-# Enhanced Dockerfile with IP rotation
+# Enhanced Dockerfile with IP rotation (Future)
 FROM grafana/k6:latest
 
 # Install proxy tools
@@ -678,51 +681,52 @@ CMD ["/scripts/run-k6-with-upload.sh"]
 
 ## 🌍 Real-World Examples
 
-### **Example 1: E-commerce Load Testing**
+### **Example 1: QueueIt Load Testing**
 
 #### **Scenario**
-- **Target**: E-commerce website
-- **Challenge**: Rate limiting (100 requests/IP/minute)
-- **Solution**: IP rotation with 100 unique IPs
+- **Target**: Website with QueueIt integration
+- **Challenge**: Test queue management with realistic user behavior
+- **Solution**: Multiple ECS tasks with IP diversity
 
 #### **Implementation**
+```bash
+#!/bin/bash
+# QueueIt load test with IP diversity
+
+# Deploy 20 tasks for 20 unique IPs
+for i in {1..20}; do
+    aws ecs run-task \
+        --cluster k6-load-test-cluster \
+        --task-definition k6-single-vu-task \
+        --launch-type FARGATE \
+        --network-configuration "awsvpcConfiguration={subnets=[subnet-097cbe067e542243a],securityGroups=[sg-0737d6eb4011e161c],assignPublicIp=ENABLED}" \
+        --region us-east-1
+done
+```
+
 ```javascript
-// E-commerce load test with IP rotation
+// QueueIt test script
 import http from 'k6/http';
+import { check } from 'k6';
 
-const PROXY_LIST = [
-    'http://proxy1.service:8080',
-    'http://proxy2.service:8080',
-    // ... 100 proxy endpoints
-];
+const BASE_URL = __ENV.TARGET_URL || 'https://affluenceit.com';
 
-export const options = {
-    scenarios: {
-        ecommerce_test: {
-            executor: 'per-vu-iterations',
-            vus: 100,
-            iterations: 1000,
-            exec: 'ecommerceTest'
-        }
-    }
-};
-
-export function ecommerceTest() {
-    // Each VU uses different proxy
-    const proxyIndex = __VU % PROXY_LIST.length;
-    const proxyUrl = PROXY_LIST[proxyIndex];
-    
-    // Simulate user browsing
-    const response = http.get('https://ecommerce-site.com/', {
-        proxy: proxyUrl
+export default function () {
+    // Test protected route (QueueIt integration)
+    const protectedResponse = http.get(`${BASE_URL}/owners/new`, {
+        redirects: 0  // Don't follow redirects
     });
     
-    // Add products to cart
-    http.post('https://ecommerce-site.com/cart', {
-        proxy: proxyUrl
-    }, {
-        product_id: '12345',
-        quantity: 1
+    check(protectedResponse, {
+        'protected route returns 302': (r) => r.status === 302,
+        'redirects to queue-it': (r) => r.headers.Location && r.headers.Location.includes('queue-it'),
+    });
+    
+    // Test health endpoint
+    const healthResponse = http.get(`${BASE_URL}/integration/queueit/health`);
+    
+    check(healthResponse, {
+        'health endpoint returns 200': (r) => r.status === 200,
     });
 }
 ```
@@ -745,8 +749,8 @@ for i in {1..50}; do
         --cluster k6-cluster \
         --task-definition k6-api-test \
         --launch-type FARGATE \
-        --network-configuration "awsvpcConfiguration={subnets=[subnet-123],securityGroups=[sg-123],assignPublicIp=ENABLED}" \
-        --overrides "{\"containerOverrides\":[{\"name\":\"k6-load-test\",\"environment\":[{\"name\":\"API_ENDPOINT\",\"value\":\"https://api.example.com/v1\"},{\"name\":\"TASK_INDEX\",\"value\":\"$i\"}]}]}"
+        --network-configuration "awsvpcConfiguration={subnets=[subnet-097cbe067e542243a],securityGroups=[sg-0737d6eb4011e161c],assignPublicIp=ENABLED}" \
+        --overrides "{\"containerOverrides\":[{\"name\":\"k6\",\"environment\":[{\"name\":\"API_ENDPOINT\",\"value\":\"https://api.example.com/v1\"},{\"name\":\"TASK_INDEX\",\"value\":\"$i\"}]}]}"
 done
 ```
 
@@ -789,28 +793,28 @@ resource "aws_ecs_cluster" "k6_cluster" {
 
 | Challenge | **Description** | **Solution** |
 |-----------|----------------|--------------|
-| **Proxy Reliability** | Proxy services may be unreliable | Use multiple proxy providers |
-| **Latency Overhead** | Proxy adds network latency | Choose low-latency proxies |
-| **Cost Management** | Proxy services can be expensive | Balance cost vs. requirements |
-| **Complexity** | IP rotation adds complexity | Start simple, scale gradually |
+| **Limited IP Count** | Only as many IPs as tasks | Use more tasks or proxy services |
+| **Geographic Limitation** | All IPs from same region | Multi-region deployment |
+| **Cost Management** | More tasks = more cost | Balance IP diversity vs cost |
+| **Complexity** | Managing multiple tasks | Use automation scripts |
 
 ### **2. Legal and Ethical Considerations**
 
 | Consideration | **Description** | **Best Practice** |
 |---------------|----------------|-------------------|
 | **Terms of Service** | Some services prohibit automated traffic | Review and comply with ToS |
-| **Rate Limiting** | Respect rate limits even with IP rotation | Use reasonable request rates |
+| **Rate Limiting** | Respect rate limits even with IP diversity | Use reasonable request rates |
 | **Geographic Restrictions** | Some content is region-restricted | Use appropriate geographic IPs |
-| **Data Privacy** | Proxy services may log traffic | Choose privacy-focused providers |
+| **Data Privacy** | Ensure proper data handling | Follow privacy guidelines |
 
 ### **3. Performance Impact**
 
 | Impact | **Description** | **Mitigation** |
 |--------|----------------|----------------|
-| **Increased Latency** | Proxy hop adds 50-200ms | Use high-quality proxy services |
-| **Reduced Throughput** | Proxy becomes bottleneck | Scale proxy capacity |
-| **Connection Overhead** | More complex network path | Optimize connection pooling |
-| **Resource Usage** | Additional CPU/memory for proxy | Monitor and optimize |
+| **Resource Usage** | More tasks = more resources | Monitor and optimize |
+| **Network Overhead** | Multiple network interfaces | Use efficient task sizing |
+| **Management Complexity** | More tasks to monitor | Use automation and monitoring |
+| **Cost Increase** | More tasks = higher cost | Balance requirements vs cost |
 
 ---
 
@@ -820,37 +824,33 @@ resource "aws_ecs_cluster" "k6_cluster" {
 
 ```bash
 # Start with multiple ECS tasks (easiest)
-for i in {1..5}; do
-    aws ecs run-task --cluster k6-cluster --task-definition k6-task
-done
+./run-10-vu-tasks.sh
 ```
 
 ### **2. Scale Gradually**
 
-```javascript
-// Start with basic IP diversity
-export const options = {
-    scenarios: {
-        basic_test: {
-            executor: 'per-vu-iterations',
-            vus: 10,  // Start small
-            iterations: 100,
-            exec: 'basicTest'
-        }
-    }
-};
+```bash
+# Start with 5 tasks, then scale up
+for i in {1..5}; do
+    aws ecs run-task --cluster k6-cluster --task-definition k6-task
+done
+
+# Later scale to 20 tasks
+for i in {1..20}; do
+    aws ecs run-task --cluster k6-cluster --task-definition k6-task
+done
 ```
 
 ### **3. Monitor Performance**
 
 ```javascript
-// Monitor proxy performance
+// Monitor IP diversity performance
 export function handleSummary(data) {
     return {
-        'proxy-performance.json': JSON.stringify({
-            proxy_latency: data.metrics.http_req_duration.values,
-            proxy_errors: data.metrics.http_req_failed.values,
-            unique_ips: data.metrics.http_reqs.values.unique_ips
+        'ip-diversity-performance.json': JSON.stringify({
+            response_times: data.metrics.http_req_duration.values,
+            error_rates: data.metrics.http_req_failed.values,
+            queueit_redirects: data.metrics.http_reqs.values.queueit_redirects
         })
     };
 }
@@ -861,17 +861,18 @@ export function handleSummary(data) {
 | Requirement | **Recommended Method** | **Reason** |
 |-------------|----------------------|------------|
 | **Basic IP Diversity** | Multiple ECS Tasks | Simple, cost-effective |
-| **High IP Count** | Proxy Services | 1000+ unique IPs |
-| **Geographic Distribution** | Multi-region + Proxy | Global coverage |
+| **QueueIt Integration** | Multiple ECS Tasks | Independent sessions |
+| **High IP Count** | Future: Proxy Services | 1000+ unique IPs |
+| **Geographic Distribution** | Multi-region + Tasks | Global coverage |
 | **Cost Sensitivity** | Multiple ECS Tasks | No additional cost |
-| **Professional Testing** | Proxy Services | Enterprise-grade |
+| **Professional Testing** | Future: Proxy Services | Enterprise-grade |
 
 ### **5. Security Considerations**
 
 ```terraform
-# Secure proxy configuration
-resource "aws_security_group" "proxy_sg" {
-  name_prefix = "${var.project_name}-proxy-sg"
+# Secure task configuration
+resource "aws_security_group" "k6_sg" {
+  name_prefix = "${var.project_name}-k6-sg"
   vpc_id      = aws_vpc.k6_vpc.id
 
   egress {
@@ -882,7 +883,7 @@ resource "aws_security_group" "proxy_sg" {
   }
 
   tags = {
-    Name = "${var.project_name}-proxy-sg"
+    Name = "${var.project_name}-k6-sg"
   }
 }
 ```
@@ -891,18 +892,18 @@ resource "aws_security_group" "proxy_sg" {
 
 ## 📊 Summary
 
-### **IP Rotation Methods Comparison**
+### **IP Diversity Methods Comparison**
 
-| Method | **IP Count** | **Cost** | **Complexity** | **Geographic** | **Dynamic** |
+| Method | **IP Count** | **Cost** | **Complexity** | **Geographic** | **QueueIt** |
 |--------|--------------|----------|----------------|----------------|-------------|
-| **Multiple ECS Tasks** | 5-20 | Low | Low | No | No |
-| **Proxy Services** | 1000+ | High | High | Yes | Yes |
-| **Multi-Region** | 20-100 | Medium | Medium | Yes | No |
-| **NAT Gateways** | 10-50 | Medium | Medium | No | No |
+| **Multiple ECS Tasks** | 5-50 | Low | Low | No | Excellent |
+| **Future: Proxy Services** | 1000+ | High | High | Yes | Good |
+| **Multi-Region** | 20-100 | Medium | Medium | Yes | Good |
+| **NAT Gateways** | 10-50 | Medium | Medium | No | Good |
 
 ### **Recommendations**
 
-1. **Start with Multiple ECS Tasks**: Simple, cost-effective, immediate results
+1. **Start with Multiple ECS Tasks**: Simple, cost-effective, excellent QueueIt integration
 2. **Evaluate Needs**: Monitor rate limiting and IP diversity requirements
 3. **Scale to Proxy Services**: Only if high IP diversity is required
 4. **Consider Multi-Region**: For geographic distribution needs
@@ -910,10 +911,11 @@ resource "aws_security_group" "proxy_sg" {
 
 ### **Key Takeaways**
 
-- **IP Rotation** provides dynamic IP assignment during test execution
 - **IP Diversity** provides static IP assignment per container
 - **Current Project** uses IP diversity (multiple tasks = multiple IPs)
-- **Advanced IP Rotation** requires proxy services or VPN integration
-- **Choose based on requirements**: Cost, complexity, IP count, geographic needs
+- **QueueIt Integration** works excellently with IP diversity
+- **Cost Effective**: Zero additional cost for IP diversity
+- **Simple Management**: Easy to deploy and monitor
+- **Future Ready**: Framework for advanced IP rotation
 
-IP rotation is a powerful technique for realistic load testing, but it should be implemented based on specific requirements and constraints! 🚀 
+IP diversity is a powerful technique for realistic load testing with QueueIt integration, providing excellent results with minimal complexity and cost! 🚀 
