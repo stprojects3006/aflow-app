@@ -75,9 +75,8 @@ public class QueueItIntegrationController {
 		meterRegistry.counter("queueit_api_requests_total", "operation", "config").increment();
 
 		try {
-			// Use the same URL pattern as IntegrationConfigProvider
-			String url = String.format("https://%s.queue-it.net/status/integrationconfig/secure/%s", CUSTOMER_ID,
-					CUSTOMER_ID);
+			// Use the correct configuration URL with event ID
+			String url = queueItSettings.getConfigUrl();
 			System.out.println("[DEBUG] QueueIt API URL (config): " + url);
 
 			// Use the same HTTP connection pattern as IntegrationConfigProvider
@@ -131,9 +130,8 @@ public class QueueItIntegrationController {
 	 */
 	public String getIntegrationConfigurationInternal() {
 		try {
-			// Use the same URL pattern as IntegrationConfigProvider
-			String url = String.format("https://%s.queue-it.net/status/integrationconfig/secure/%s", CUSTOMER_ID,
-					CUSTOMER_ID);
+			// Use the correct configuration URL with event ID
+			String url = queueItSettings.getConfigUrl();
 			System.out.println("[DEBUG] QueueIt API URL (internal config): " + url);
 			return getJsonText(url);
 		}
@@ -153,8 +151,8 @@ public class QueueItIntegrationController {
 		meterRegistry.counter("queueit_api_requests_total", "operation", "health").increment();
 
 		try {
-			// Use the same base URL pattern as IntegrationConfigProvider
-			String url = String.format("https://%s.queue-it.net/health", CUSTOMER_ID);
+			// Use the base URL with health endpoint
+			String url = queueItSettings.getBaseUrl() + "/health";
 			System.out.println("[DEBUG] QueueIt API URL (health): " + url);
 
 			// Use the same HTTP connection pattern as IntegrationConfigProvider
@@ -188,8 +186,8 @@ public class QueueItIntegrationController {
 		meterRegistry.counter("queueit_api_requests_total", "operation", "queue").increment();
 
 		try {
-			// Use the same base URL pattern as IntegrationConfigProvider
-			String url = String.format("https://%s.queue-it.net/status/queue", CUSTOMER_ID);
+			// Use the base URL with queue status endpoint
+			String url = queueItSettings.getBaseUrl() + "/status/queue";
 			System.out.println("[DEBUG] QueueIt API URL (queue): " + url);
 
 			// Use the same HTTP connection pattern as IntegrationConfigProvider
@@ -331,13 +329,13 @@ public class QueueItIntegrationController {
 		String body = "{\"userId\":\"" + userId + "\"}";
 		String responseText;
 		boolean success = false;
-		try {
-			String url = queueItSettings.getBaseUrl() + "/queue";
-			HttpHeaders headers = buildHeaders();
-			headers.set("customer-id", queueItSettings.getCustomerId());
-			headers.set("secret-key", queueItSettings.getSecretKey());
-			headers.set("Content-Type", "application/json");
-			HttpEntity<String> entity = new HttpEntity<>(body, headers);
+		                try {
+                        String url = queueItSettings.getBaseUrl() + "/queue";
+                        HttpHeaders headers = buildHeaders();
+                        headers.set("customer-id", queueItSettings.getCustomerId());
+                        headers.set("secret-key", queueItSettings.getSecretKey());
+                        headers.set("Content-Type", "application/json");
+                        HttpEntity<String> entity = new HttpEntity<>(body, headers);
 			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 			responseText = response.getBody();
 			success = response.getStatusCode().is2xxSuccessful();
@@ -439,13 +437,13 @@ public class QueueItIntegrationController {
 		Timer.Sample sample = Timer.start(meterRegistry);
 		meterRegistry.counter("queueit_status_total").increment();
 		meterRegistry.counter("queueit_api_requests_total", "operation", "status").increment();
-		try {
-			String url = queueItSettings.getBaseUrl() + "/status";
-			HttpHeaders headers = buildHeaders();
-			headers.set("customer-id", queueItSettings.getCustomerId());
-			headers.set("secret-key", queueItSettings.getSecretKey());
-			headers.set("Content-Type", "application/json");
-			HttpEntity<String> entity = new HttpEntity<>(headers);
+		                try {
+                        String url = queueItSettings.getBaseUrl() + "/status";
+                        HttpHeaders headers = buildHeaders();
+                        headers.set("customer-id", queueItSettings.getCustomerId());
+                        headers.set("secret-key", queueItSettings.getSecretKey());
+                        headers.set("Content-Type", "application/json");
+                        HttpEntity<String> entity = new HttpEntity<>(headers);
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 			meterRegistry.counter("queueit_api_success_total", "operation", "status").increment();
 			return ResponseEntity.status(response.getStatusCode()).body(response.getBody());

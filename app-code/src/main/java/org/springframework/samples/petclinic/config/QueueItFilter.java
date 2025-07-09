@@ -3,6 +3,11 @@ package org.springframework.samples.petclinic.config;
 import com.queue_it.connector.KnownUser;
 import com.queue_it.connector.RequestValidationResult;
 import com.queue_it.connector.models.ConnectorSettings;
+import com.queue_it.connector.integrationconfig.CustomerIntegration;
+import com.queue_it.connector.IConnectorContextProvider;
+import com.queue_it.connector.ConnectorContextProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,12 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.samples.petclinic.integration.QueueItSettings;
+import org.springframework.samples.petclinic.integration.QueueItIntegrationController;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 //@Component
-@WebFilter("/*") // Disabled to prevent QueueIt redirects
+@WebFilter("/*") // Enable QueueIt filter
 public class QueueItFilter implements Filter {
 
 	private static final Logger logger = LoggerFactory.getLogger(QueueItFilter.class);
@@ -26,6 +32,9 @@ public class QueueItFilter implements Filter {
 
 	@Autowired
 	private QueueItSettings queueItSettings;
+
+	@Autowired
+	private QueueItIntegrationController queueItController;
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -42,29 +51,51 @@ public class QueueItFilter implements Filter {
 		}
 
 		try {
-			// Check if user has a valid queue token
+			// Get integration configuration from QueueIt API
+			String integrationConfigJson = getIntegrationConfiguration();
+			if (integrationConfigJson == null) {
+				logger.error("Failed to get integration configuration, allowing request through");
+				chain.doFilter(request, response);
+				return;
+			}
+
+			// Parse integration configuration using Jackson with ignore unknown properties
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			CustomerIntegration customerIntegration = mapper.readValue(integrationConfigJson, CustomerIntegration.class);
+			
+			// Build target URL
+			String targetUrl = buildTargetUrl(httpRequest);
+			
+			// Get queue token from request
 			String queueitToken = httpRequest.getParameter(QueueItConfig.QUEUEIT_TOKEN_KEY);
 
-			if (queueitToken == null || queueitToken.isEmpty()) {
-				// No token - redirect to queue
-				String targetUrl = buildTargetUrl(httpRequest);
-				String queueUrl = buildQueueUrl(targetUrl);
-				logger.info("No token, redirecting to queue: {}", queueUrl);
-				httpResponse.sendRedirect(queueUrl);
+			// Create context provider with required parameters
+			IConnectorContextProvider contextProvider = new ConnectorContextProvider(
+				connectorSettings, 
+				httpRequest, 
+				httpResponse
+			);
+
+			// Use official QueueIt SDK to validate request
+			RequestValidationResult validationResult = KnownUser.validateRequestByIntegrationConfig(
+				targetUrl, 
+				queueitToken, 
+				customerIntegration, 
+				queueItSettings.getCustomerId(), 
+				queueItSettings.getSecretKey(),
+				contextProvider
+			);
+
+			// Handle validation result
+			if (validationResult.doRedirect()) {
+				// Redirect to queue
+				logger.info("Redirecting to queue: {}", validationResult.getRedirectUrl());
+				httpResponse.sendRedirect(validationResult.getRedirectUrl());
 				return;
 			}
 
-			// Validate token (simplified validation)
-			if (!isValidToken(queueitToken)) {
-				// Invalid token - redirect to queue
-				String targetUrl = buildTargetUrl(httpRequest);
-				String queueUrl = buildQueueUrl(targetUrl);
-				logger.info("Invalid token, redirecting to queue: {}", queueUrl);
-				httpResponse.sendRedirect(queueUrl);
-				return;
-			}
-
-			// Token is valid - continue with request
+			// Request is valid, continue
 			chain.doFilter(request, response);
 
 		}
@@ -113,24 +144,8 @@ public class QueueItFilter implements Filter {
 
 	private String getIntegrationConfiguration() {
 		try {
-			String url = String.format("https://%s.queue-it.net/status/integrationconfig/secure/%s",
-					queueItSettings.getCustomerId(), queueItSettings.getCustomerId());
-
-			java.net.URL resource = new java.net.URL(url);
-			java.net.URLConnection connection = resource.openConnection();
-			connection.setRequestProperty("api-key", queueItSettings.getApiKey());
-			connection.setConnectTimeout(4000);
-			connection.setReadTimeout(4000);
-
-			java.io.BufferedReader in = new java.io.BufferedReader(
-					new java.io.InputStreamReader(connection.getInputStream()));
-			StringBuilder response = new StringBuilder();
-			String inputLine;
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
-			}
-			in.close();
-			return response.toString();
+			// Use the controller's method to get integration configuration
+			return queueItController.getIntegrationConfigurationInternal();
 		}
 		catch (Exception e) {
 			logger.error("Failed to get integration configuration", e);
@@ -140,7 +155,7 @@ public class QueueItFilter implements Filter {
 
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
-		logger.info("QueueIt Filter initialized with official connector");
+		logger.info("QueueIt Filter initialized with official connector SDK");
 	}
 
 	@Override
@@ -170,16 +185,6 @@ public class QueueItFilter implements Filter {
 		}
 
 		return urlStr;
-	}
-
-	private String buildQueueUrl(String targetUrl) {
-		return String.format("https://%s.queue-it.net/queue?targetUrl=%s", queueItSettings.getCustomerId(), targetUrl);
-	}
-
-	private boolean isValidToken(String token) {
-		// Simplified token validation - check if token is not empty and has reasonable
-		// format
-		return token != null && !token.isEmpty() && token.length() > 10;
 	}
 
 }

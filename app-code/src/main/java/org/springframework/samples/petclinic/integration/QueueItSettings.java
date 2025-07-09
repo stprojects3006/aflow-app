@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class QueueItSettings {
 
-	// Hardcoded constants matching IntegrationConfigProvider pattern
+	// Hardcoded constants for QueueIt integration
 	private static final String CUSTOMER_ID = "futuraforge";
 
 	private static final String SECRET_KEY = "62cc5b6d-cad7-44c5-88a2-34fa78f73b767c7dcee7-5e81-44c4-93ea-0990c14f3176";
@@ -24,9 +24,14 @@ public class QueueItSettings {
 		return API_KEY;
 	}
 
-	// Build base URL dynamically like IntegrationConfigProvider
+	// Build base URL dynamically
 	public String getBaseUrl() {
 		return String.format("https://%s.queue-it.net", CUSTOMER_ID);
+	}
+
+	// Build configuration URL for integration config
+	public String getConfigUrl() {
+		return String.format("https://%s.queue-it.net/status/integrationconfig/secure/%s", CUSTOMER_ID, CUSTOMER_ID);
 	}
 
 }
