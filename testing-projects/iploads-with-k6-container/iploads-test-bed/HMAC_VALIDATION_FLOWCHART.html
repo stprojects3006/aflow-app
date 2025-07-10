@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMAC-Based Request Validation Flowchart</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 1rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .section h2 {
+            color: #1e3c72;
+            margin-top: 0;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+        }
+        
+        .flowchart-container {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .mermaid {
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+        
+        .security-benefits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .benefit-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .benefit-card h4 {
+            color: #007bff;
+            margin-top: 0;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.5rem;
+        }
+        
+        .tech-details {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .example-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .example-box h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 1rem;
+            }
+            
+            .security-benefits {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>HMAC-Based Request Validation</h1>
+            <p>Complete Flowchart and Implementation Guide</p>
+        </div>
+        
+        <div class="content">
+            <!-- Overview Section -->
+            <div class="section">
+                <h2>🔐 What is HMAC Validation?</h2>
+                <p>
+                    <strong>HMAC</strong> (Hash-based Message Authentication Code) is a cryptographic method that combines a secret key with a hash function to create a unique signature for data. This ensures both <strong>authentication</strong> and <strong>integrity</strong> of HTTP requests.
+                </p>
+                
+                <div class="tech-details">
+                    <h4>🔍 Key Components:</h4>
+                    <ul>
+                        <li><strong>Secret Key:</strong> Shared between client and server</li>
+                        <li><strong>Hash Function:</strong> Usually SHA-256 or SHA-512</li>
+                        <li><strong>Payload:</strong> Request data to be signed</li>
+                        <li><strong>Signature:</strong> Generated HMAC value</li>
+                        <li><strong>Timestamp:</strong> Prevents replay attacks</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Flowchart -->
+            <div class="section">
+                <h2>🔄 HMAC Validation Flow</h2>
+                <div class="flowchart-container">
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "CLIENT SIDE"
+                                A[📝 Prepare Request Payload] --> B[⏰ Add Timestamp]
+                                B --> C[🔑 Generate HMAC Signature]
+                                C --> D[📤 Send HTTP Request]
+                            end
+                            
+                            subgraph "NETWORK"
+                                E[🌐 HTTP Transmission]
+                            end
+                            
+                            subgraph "SERVER SIDE"
+                                F[📥 Receive Request] --> G[🔍 Extract Signature & Timestamp]
+                                G --> H[⏰ Validate Timestamp]
+                                H --> I{Timestamp Valid?}
+                                I -->|No| J[❌ Reject Request - Replay Attack]
+                                I -->|Yes| K[🔑 Recreate HMAC Signature]
+                                K --> L[🔍 Compare Signatures]
+                                L --> M{Signatures Match?}
+                                M -->|No| N[❌ Reject Request - Invalid Signature]
+                                M -->|Yes| O[✅ Accept Request - Valid]
+                                O --> P[⚙️ Process Business Logic]
+                            end
+                            
+                            D --> E
+                            E --> F
+                            
+                            style A fill:#e1f5fe
+                            style C fill:#fff3e0
+                            style D fill:#f3e5f5
+                            style F fill:#e8f5e8
+                            style K fill:#fff8e1
+                            style O fill:#e0f2f1
+                            style J fill:#ffebee
+                            style N fill:#ffebee
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Process Flow -->
+            <div class="section">
+                <h2>📋 Detailed Process Breakdown</h2>
+                
+                <div class="mermaid">
+                    sequenceDiagram
+                        participant C as 👤 Client
+                        participant S as 🖥️ Server
+                        participant H as 🔐 HMAC Engine
+                        
+                        Note over C,S: REQUEST CREATION PHASE
+                        C->>C: 1. Create request payload
+                        C->>C: 2. Add current timestamp
+                        C->>H: 3. Generate HMAC(payload + timestamp, secretKey)
+                        H-->>C: 4. Return signature
+                        C->>C: 5. Add signature to headers
+                        C->>S: 6. Send HTTP request
+                        
+                        Note over C,S: REQUEST VALIDATION PHASE
+                        S->>S: 7. Extract signature & timestamp
+                        S->>S: 8. Check timestamp freshness
+                        alt Timestamp is valid
+                            S->>H: 9. Recreate HMAC(payload + timestamp, secretKey)
+                            H-->>S: 10. Return expected signature
+                            S->>S: 11. Compare signatures
+                            alt Signatures match
+                                S->>S: 12. ✅ Request is valid
+                                S->>S: 13. Process business logic
+                            else Signatures don't match
+                                S->>S: 14. ❌ Request rejected
+                            end
+                        else Timestamp is stale
+                            S->>S: 15. ❌ Replay attack detected
+                        end
+                        
+                        Note over C,S: RESPONSE PHASE
+                        S->>C: 16. Send response
+                    </div>
+            </div>
+
+            <!-- Security Benefits -->
+            <div class="section">
+                <h2>🛡️ Security Benefits</h2>
+                
+                <div class="security-benefits">
+                    <div class="benefit-card">
+                        <h4>🔑 Authentication</h4>
+                        <p>Only parties with the secret key can create valid signatures. This prevents unauthorized access and ensures requests come from trusted sources.</p>
+                        <div class="code-block">
+// Only valid clients can create signatures
+const signature = createHMAC(payload, secretKey);
+// Server validates: signature === expectedSignature
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <h4>🔒 Integrity</h4>
+                        <p>Any modification to the payload changes the signature. This detects tampering, corruption, or man-in-the-middle attacks.</p>
+                        <div class="code-block">
+// Original payload
+const payload1 = '{"userId": "123"}';
+const sig1 = createHMAC(payload1, key);
+
+// Modified payload
+const payload2 = '{"userId": "456"}';
+const sig2 = createHMAC(payload2, key);
+// sig1 !== sig2 (detects tampering)
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <h4>📝 Non-repudiation</h4>
+                        <p>Proves the request came from the expected source. The sender cannot deny sending the request due to cryptographic proof.</p>
+                        <div class="code-block">
+// Server logs: "Request from client with valid signature"
+// Client cannot deny sending the request
+// Cryptographic proof exists
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <h4>⏰ Replay Protection</h4>
+                        <p>Timestamp validation prevents old requests from being reused. This stops replay attacks where attackers capture and replay valid requests.</p>
+                        <div class="code-block">
+// Check if request is recent
+const timeDiff = currentTime - requestTime;
+if (timeDiff > 300) { // 5 minutes
+    reject("Request too old");
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Implementation Examples -->
+            <div class="section">
+                <h2>💻 Implementation Examples</h2>
+                
+                <div class="example-box">
+                    <h4>🔧 JavaScript/Node.js Implementation</h4>
+                    <div class="code-block">
+const crypto = require('crypto');
+
+// Client-side: Create signature
+function createHMACSignature(payload, secretKey, timestamp) {
+    const data = payload + timestamp;
+    const hmac = crypto.createHmac('sha256', secretKey);
+    hmac.update(data);
+    return hmac.digest('hex');
+}
+
+// Server-side: Validate signature
+function validateHMACSignature(payload, signature, timestamp, secretKey) {
+    // Check timestamp (5 minute window)
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (Math.abs(currentTime - timestamp) > 300) {
+        return false; // Replay attack
+    }
+    
+    // Recreate signature
+    const expectedSignature = createHMACSignature(payload, secretKey, timestamp);
+    
+    // Compare signatures
+    return signature === expectedSignature;
+}
+
+// Usage example
+const payload = JSON.stringify({ userId: "123", action: "validate" });
+const timestamp = Math.floor(Date.now() / 1000);
+const secretKey = "your-secret-key";
+const signature = createHMACSignature(payload, secretKey, timestamp);
+
+console.log('Signature:', signature);
+console.log('Valid:', validateHMACSignature(payload, signature, timestamp, secretKey));
+                    </div>
+                </div>
+                
+                <div class="example-box">
+                    <h4>☕ Java Implementation (Spring Boot)</h4>
+                    <div class="code-block">
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
+
+@Component
+public class HMACValidator {
+    
+    private static final String SECRET_KEY = "your-secret-key";
+    private static final String ALGORITHM = "HmacSHA256";
+    
+    public boolean validateRequest(String payload, String signature, long timestamp) {
+        // Check timestamp (5 minute tolerance)
+        long currentTime = System.currentTimeMillis() / 1000;
+        if (Math.abs(currentTime - timestamp) > 300) {
+            return false;
+        }
+        
+        // Recreate signature
+        String expectedSignature = createHMAC(payload + timestamp, SECRET_KEY);
+        
+        // Compare signatures
+        return signature.equals(expectedSignature);
+    }
+    
+    private String createHMAC(String data, String key) {
+        try {
+            Mac mac = Mac.getInstance(ALGORITHM);
+            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), ALGORITHM);
+            mac.init(secretKeySpec);
+            byte[] hash = mac.doFinal(data.getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (Exception e) {
+            throw new RuntimeException("HMAC creation failed", e);
+        }
+    }
+}
+
+// Controller usage
+@PostMapping("/api/validate")
+public ResponseEntity<String> validateRequest(
+    @RequestBody String payload,
+    @RequestHeader("X-Signature") String signature,
+    @RequestHeader("X-Timestamp") long timestamp) {
+    
+    if (!hmacValidator.validateRequest(payload, signature, timestamp)) {
+        return ResponseEntity.status(401).body("Invalid signature");
+    }
+    
+    // Process valid request
+    return ResponseEntity.ok("Request validated successfully");
+}
+                    </div>
+                </div>
+                
+                <div class="example-box">
+                    <h4>🐍 Python Implementation</h4>
+                    <div class="code-block">
+import hmac
+import hashlib
+import time
+import json
+
+class HMACValidator:
+    def __init__(self, secret_key):
+        self.secret_key = secret_key.encode('utf-8')
+    
+    def create_signature(self, payload, timestamp):
+        """Create HMAC signature"""
+        data = (payload + str(timestamp)).encode('utf-8')
+        signature = hmac.new(self.secret_key, data, hashlib.sha256)
+        return signature.hexdigest()
+    
+    def validate_signature(self, payload, signature, timestamp):
+        """Validate HMAC signature"""
+        # Check timestamp (5 minute window)
+        current_time = int(time.time())
+        if abs(current_time - timestamp) > 300:
+            return False  # Replay attack
+        
+        # Recreate signature
+        expected_signature = self.create_signature(payload, timestamp)
+        
+        # Compare signatures
+        return hmac.compare_digest(signature, expected_signature)
+
+# Usage example
+validator = HMACValidator("your-secret-key")
+payload = json.dumps({"userId": "123", "action": "validate"})
+timestamp = int(time.time())
+signature = validator.create_signature(payload, timestamp)
+
+print(f"Signature: {signature}")
+print(f"Valid: {validator.validate_signature(payload, signature, timestamp)}")
+                    </div>
+                </div>
+            </div>
+
+            <!-- QueueIt Integration Example -->
+            <div class="section">
+                <h2>🎯 QueueIt Integration Example</h2>
+                
+                <div class="mermaid">
+                    graph LR
+                        subgraph "QueueIt Client"
+                            A[📝 Create Token Request] --> B[⏰ Add Timestamp]
+                            B --> C[🔑 Generate HMAC]
+                            C --> D[📤 Send to QueueIt API]
+                        end
+                        
+                        subgraph "QueueIt Server"
+                            E[📥 Receive Request] --> F[🔍 Extract Signature]
+                            F --> G[⏰ Validate Timestamp]
+                            G --> H[🔑 Verify HMAC]
+                            H --> I{Valid?}
+                            I -->|Yes| J[✅ Process Token]
+                            I -->|No| K[❌ Reject Request]
+                        end
+                        
+                        D --> E
+                        
+                        style A fill:#e1f5fe
+                        style C fill:#fff3e0
+                        style E fill:#e8f5e8
+                        style H fill:#fff8e1
+                        style J fill:#e0f2f1
+                        style K fill:#ffebee
+                    </div>
+                
+                <div class="code-block">
+// QueueIt HMAC Integration Example
+@RestController
+@RequestMapping("/integration/queueit")
+public class QueueItIntegrationController {
+    
+    private static final String SECRET_KEY = "62cc5b6d-cad7-44c5-88a2-34fa78f73b767c7dcee7-5e81-44c4-93ea-0990c14f3176";
+    
+    @PostMapping("/validate")
+    public ResponseEntity<String> validateQueueToken(
+        @RequestBody String payload,
+        @RequestHeader("X-Signature") String signature,
+        @RequestHeader("X-Timestamp") long timestamp) {
+        
+        // Validate HMAC signature
+        if (!validateHMAC(payload, signature, timestamp)) {
+            return ResponseEntity.status(401)
+                .body("{\"error\":\"Invalid signature\"}");
+        }
+        
+        // Process QueueIt token validation
+        return processQueueItValidation(payload);
+    }
+    
+    private boolean validateHMAC(String payload, String signature, long timestamp) {
+        // Check timestamp (5 minute tolerance)
+        long currentTime = System.currentTimeMillis() / 1000;
+        if (Math.abs(currentTime - timestamp) > 300) {
+            return false;
+        }
+        
+        // Recreate signature
+        String expectedSignature = createHMAC(payload + timestamp, SECRET_KEY);
+        
+        // Compare signatures
+        return signature.equals(expectedSignature);
+    }
+    
+    private String createHMAC(String data, String key) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256");
+            mac.init(secretKeySpec);
+            byte[] hash = mac.doFinal(data.getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (Exception e) {
+            throw new RuntimeException("HMAC creation failed", e);
+        }
+    }
+}
+                </div>
+            </div>
+
+            <!-- Best Practices -->
+            <div class="section">
+                <h2>✅ Best Practices</h2>
+                
+                <div class="security-benefits">
+                    <div class="benefit-card">
+                        <h4>🔐 Secret Key Management</h4>
+                        <ul>
+                            <li>Store secrets in environment variables</li>
+                            <li>Use AWS Secrets Manager or similar</li>
+                            <li>Rotate keys regularly (every 90 days)</li>
+                            <li>Never expose keys in code or logs</li>
+                            <li>Use different keys for different environments</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <h4>⏰ Timestamp Validation</h4>
+                        <ul>
+                            <li>Include timestamp in signature calculation</li>
+                            <li>Set reasonable time windows (5-15 minutes)</li>
+                            <li>Use UTC timestamps consistently</li>
+                            <li>Log timestamp validation failures</li>
+                            <li>Consider clock skew between systems</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <h4>📋 Signature Headers</h4>
+                        <ul>
+                            <li>Use consistent header names (X-Signature)</li>
+                            <li>Include algorithm information if needed</li>
+                            <li>Consider multiple signature algorithms</li>
+                            <li>Use Base64 or hex encoding consistently</li>
+                            <li>Document header requirements</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <h4>🚨 Error Handling</h4>
+                        <ul>
+                            <li>Don't reveal signature details in errors</li>
+                            <li>Log validation failures for monitoring</li>
+                            <li>Return consistent error responses</li>
+                            <li>Implement rate limiting on failures</li>
+                            <li>Monitor for attack patterns</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attack Prevention -->
+            <div class="section">
+                <h2>🛡️ Attack Prevention</h2>
+                
+                <div class="mermaid">
+                    graph TD
+                        subgraph "ATTACK TYPES"
+                            A1[🎭 Replay Attack] --> B1[⏰ Timestamp Validation]
+                            A2[🔓 Man-in-the-Middle] --> B2[🔑 HMAC Integrity Check]
+                            A3[👤 Impersonation] --> B3[🔐 Secret Key Authentication]
+                            A4[📝 Payload Tampering] --> B4[🔍 Signature Comparison]
+                        end
+                        
+                        subgraph "DEFENSE MECHANISMS"
+                            B1 --> C1[✅ Request Rejected - Too Old]
+                            B2 --> C2[✅ Request Rejected - Invalid Signature]
+                            B3 --> C3[✅ Request Rejected - Unauthorized]
+                            B4 --> C4[✅ Request Rejected - Data Corrupted]
+                        end
+                        
+                        style A1 fill:#ffebee
+                        style A2 fill:#ffebee
+                        style A3 fill:#ffebee
+                        style A4 fill:#ffebee
+                        style C1 fill:#e8f5e8
+                        style C2 fill:#e8f5e8
+                        style C3 fill:#e8f5e8
+                        style C4 fill:#e8f5e8
+                    </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="section">
+                <h2>📊 Summary</h2>
+                
+                <div class="tech-details">
+                    <h4>🎯 HMAC Validation Provides:</h4>
+                    <ul>
+                        <li><strong>Authentication:</strong> Verifies request comes from trusted source</li>
+                        <li><strong>Integrity:</strong> Ensures data hasn't been tampered with</li>
+                        <li><strong>Non-repudiation:</strong> Provides cryptographic proof of origin</li>
+                        <li><strong>Replay Protection:</strong> Prevents reuse of old requests</li>
+                    </ul>
+                </div>
+                
+                <div class="example-box">
+                    <h4>🔧 Implementation Checklist:</h4>
+                    <ol>
+                        <li>Choose a strong hash algorithm (SHA-256 recommended)</li>
+                        <li>Generate and securely store secret keys</li>
+                        <li>Include timestamp in signature calculation</li>
+                        <li>Implement proper error handling</li>
+                        <li>Add monitoring and logging</li>
+                        <li>Test with various attack scenarios</li>
+                        <li>Document the validation process</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            sequence: {
+                useMaxWidth: true,
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35,
+                mirrorActors: true,
+                bottomMarginAdj: 1,
+                useMaxWidth: true,
+                rightAngles: false,
+                showSequenceNumbers: false
+            }
+        });
+    </script>
+</body>
+</html> 
